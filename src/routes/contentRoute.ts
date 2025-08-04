@@ -1,0 +1,33 @@
+import express from "express";
+import { contentControllers } from "../../src/controllers";
+import { isAuthorized } from "../middleware/auth";
+import {upload} from "../middleware/upload"; 
+
+const contentRoute = express.Router();
+
+contentRoute
+  .route("/")
+  .get(isAuthorized, contentControllers.get_content_all)
+  .post(isAuthorized,  upload.fields([
+      { name: "file", maxCount: 1 },
+      { name: "prev_url", maxCount: 1 },
+    ]), contentControllers.post_content_with_upload);
+  
+  contentRoute.route("/training")
+  .get(isAuthorized, contentControllers.get_content_training)
+  
+  contentRoute.route("/training/:id")
+  .get(isAuthorized, contentControllers.get_content_training_by_id)
+  
+  contentRoute.route("/nutrition")
+  .get(isAuthorized, contentControllers.get_content_nutrition)
+  
+  contentRoute.route("/nutrition/:id")
+  .get(isAuthorized, contentControllers.get_content_nutrition_by_id)
+  
+  contentRoute
+  .route("/:id")
+  .get(isAuthorized, contentControllers.get_content)
+  .delete(isAuthorized, contentControllers.delete_content_by_id)
+
+export default contentRoute;
