@@ -46,14 +46,7 @@ const get_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         console.log("🚀 ~ id:", id);
         const content = yield content_1.Content.findByPk(id);
         // if (!content) return res.status(404).json("content not found");
-        let url = "";
-        // if(content.url){
-        //   url = getWasabiFileUrl(content.url);
-        // }
         console.log("🚀 ~ content:", content);
-        if (content) {
-            content.url = url;
-        }
         return res.status(200).json(content);
     }
     catch (err) {
