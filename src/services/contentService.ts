@@ -51,15 +51,7 @@ const get_content_by_id = async (
 
     const content = await Content.findByPk(id);
     // if (!content) return res.status(404).json("content not found");
-    let url = "";
-    // if(content.url){
-    //   url = getWasabiFileUrl(content.url);
-    // }
     console.log("🚀 ~ content:", content);
-
-    if (content) {
-      content.url = url;
-    }
 
     return res.status(200).json(content);
   } catch (err) {

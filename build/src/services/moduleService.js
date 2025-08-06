@@ -27,7 +27,6 @@ const models_1 = require("../models");
 const mime_types_1 = __importDefault(require("mime-types"));
 const wasabiService_1 = require("./wasabiService");
 const uuid_1 = require("uuid");
-const fs_1 = __importDefault(require("fs"));
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
 const get_module = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield models_1.Module.findAll();
@@ -47,12 +46,8 @@ const post_module = (req, res, next) => __awaiter(void 0, void 0, void 0, functi
         const extension = mime_types_1.default.extension(file.mimetype);
         const uniqueName = `${(0, uuid_1.v4)()}.${extension}`;
         const pathInWasabi = `images/${uniqueName}`;
-        // Crear un flujo de lectura del archivo
-        const fileStream = fs_1.default.createReadStream(file.path);
         // Subir el archivo a Wasabi
-        const uploadResult = yield (0, wasabiService_1.uploadFileToFirebase)(pathInWasabi, fileStream, file.mimetype);
-        // Limpiar archivo temporal
-        fs_1.default.unlinkSync(file.path);
+        const uploadResult = yield (0, wasabiService_1.uploadFileToFirebase)(pathInWasabi, file.buffer, file.mimetype);
         // Obtener la URL de la imagen cargada
         const imageUrl = uploadResult;
         moduleData.prev_url = imageUrl;
@@ -110,9 +105,7 @@ const put_module_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, f
         const extension = mime_types_1.default.extension(image.mimetype);
         const uniqueName = `${(0, uuid_1.v4)()}.${extension}`;
         const pathInWasabi = `images/${uniqueName}`;
-        const fileStream = fs_1.default.createReadStream(image.path);
-        const uploadResult = yield (0, wasabiService_1.uploadFileToFirebase)(pathInWasabi, fileStream, image.mimetype);
-        fs_1.default.unlinkSync(image.path);
+        const uploadResult = yield (0, wasabiService_1.uploadFileToFirebase)(pathInWasabi, image.buffer, image.mimetype);
         const imageUrl = uploadResult;
         dataPut.prev_url = imageUrl;
     }

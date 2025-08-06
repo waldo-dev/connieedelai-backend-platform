@@ -11,14 +11,10 @@ const fs_1 = __importDefault(require("fs"));
 const tempDir = path_1.default.join(__dirname, "..", "uploads");
 if (!fs_1.default.existsSync(tempDir))
     fs_1.default.mkdirSync(tempDir);
-// Multer config
 exports.upload = (0, multer_1.default)({
-    storage: multer_1.default.diskStorage({
-        destination: (req, file, cb) => cb(null, tempDir),
-        filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-    }),
+    storage: multer_1.default.memoryStorage(),
     limits: {
-        fileSize: 5 * 1024 * 1024 * 1024, // 5 GB
+        fileSize: 5 * 1024 * 1024 * 1024, // 5 GB si necesitas tanto
     },
 });
 //# sourceMappingURL=upload.js.map

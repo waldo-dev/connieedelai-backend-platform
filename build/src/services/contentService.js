@@ -18,7 +18,6 @@ const models_1 = require("../models");
 const mime_types_1 = __importDefault(require("mime-types"));
 const wasabiService_1 = require("./wasabiService");
 const uuid_1 = require("uuid");
-const fs_1 = __importDefault(require("fs"));
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
 const get_content = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield content_1.Content.findAll();
@@ -49,7 +48,7 @@ const get_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         // if (!content) return res.status(404).json("content not found");
         let url = "";
         // if(content.url){
-        //   url = getWasabiFileUrl(content.url); 
+        //   url = getWasabiFileUrl(content.url);
         // }
         console.log("🚀 ~ content:", content);
         if (content) {
@@ -98,7 +97,9 @@ const get_content_training_by_id = (req, res, next) => __awaiter(void 0, void 0,
             ],
         });
         if (!section || !section.contents || section.contents.length === 0) {
-            return res.status(404).json({ message: "Contenido no encontrado en entrenamientos" });
+            return res
+                .status(404)
+                .json({ message: "Contenido no encontrado en entrenamientos" });
         }
         return res.status(200).json(section);
     }
@@ -145,7 +146,9 @@ const get_content_nutrition_by_id = (req, res, next) => __awaiter(void 0, void 0
             ],
         });
         if (!section || !section.contents || section.contents.length === 0) {
-            return res.status(404).json({ message: "Contenido no encontrado en entrenamientos" });
+            return res
+                .status(404)
+                .json({ message: "Contenido no encontrado en entrenamientos" });
         }
         return res.status(200).json(section);
     }
@@ -232,39 +235,38 @@ const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, v
             return res.status(400).json({ message: "Faltan archivos o moduleId" });
         }
         // Encontrar archivos según tipo
-        const videoOrPdfFile = files.file.find((file) => file.mimetype === 'application/pdf' || file.mimetype.startsWith('video/'));
-        const imageFile = files.prev_url.find((file) => file.mimetype.startsWith('image/'));
-        if (!videoOrPdfFile
-            || !imageFile) {
-            return res.status(400).json({ message: "Se requieren un archivo de video/PDF y una imagen" });
+        const videoOrPdfFile = files.file.find((file) => file.mimetype === "application/pdf" ||
+            file.mimetype.startsWith("video/"));
+        const imageFile = files.prev_url.find((file) => file.mimetype.startsWith("image/"));
+        if (!videoOrPdfFile || !imageFile) {
+            return res
+                .status(400)
+                .json({ message: "Se requieren un archivo de video/PDF y una imagen" });
         }
         const videoOrPdfExtension = mime_types_1.default.extension(videoOrPdfFile.mimetype);
         const videoOrPdfUniqueName = `${(0, uuid_1.v4)()}.${videoOrPdfExtension}`;
         const videoOrPdfPathInStorage = `contents/${type == "pdf" ? "pdf" : "video"}/${videoOrPdfUniqueName}`;
-        const videoOrPdfStream = fs_1.default.createReadStream(videoOrPdfFile.path);
-        const videoOrPdfUrl = yield (0, wasabiService_1.uploadFileToFirebase)(videoOrPdfPathInStorage, videoOrPdfStream, videoOrPdfFile.mimetype);
+        const videoOrPdfUrl = yield (0, wasabiService_1.uploadFileToFirebase)(videoOrPdfPathInStorage, videoOrPdfFile.buffer, videoOrPdfFile.mimetype);
         console.log("🚀 ~ post_content_with_upload ~ videoOrPdfUrl:", videoOrPdfUrl);
-        fs_1.default.unlinkSync(videoOrPdfFile.path);
         const imageExtension = mime_types_1.default.extension(imageFile.mimetype);
         const imageUniqueName = `${(0, uuid_1.v4)()}.${imageExtension}`;
         const imagePathInStorage = `contents/images/${imageUniqueName}`;
-        const imageStream = fs_1.default.createReadStream(imageFile.path);
-        const imageUrl = yield (0, wasabiService_1.uploadFileToFirebase)(imagePathInStorage, imageStream, imageFile.mimetype);
-        fs_1.default.unlinkSync(imageFile.path); // Limpiar temporal
-        // const contentCreated = await Content.create({
-        //   title,
-        //   description,
-        //   type,
-        //   is_downloadble: is_downloadable === "true",
-        //   url: videoOrPdfUrl,
-        //   prev_url: imageUrl,
-        //   visible: true,
-        // });
-        // // Relacionar con módulo
-        // await ContentModule.create({
-        //   content_id: contentCreated.id,
-        //   module_id: moduleId,
-        // });
+        const imageUrl = yield (0, wasabiService_1.uploadFileToFirebase)(imagePathInStorage, imageFile.buffer, imageFile.mimetype);
+        console.log("🚀 ~ post_content_with_upload ~ imageUrl:", imageUrl);
+        const contentCreated = yield content_1.Content.create({
+            title,
+            description,
+            type,
+            is_downloadble: is_downloadable === "true",
+            url: videoOrPdfUrl,
+            prev_url: imageUrl,
+            visible: true,
+        });
+        // Relacionar con módulo
+        yield models_1.ContentModule.create({
+            content_id: contentCreated.id,
+            module_id: moduleId,
+        });
         return res.status(201).json(videoOrPdfUrl);
     }
     catch (err) {
@@ -285,15 +287,19 @@ const delete_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 
         }
         // Eliminar relaciones en ContentModule
         yield models_1.ContentModule.destroy({
-            where: { content_id: contentId }
+            where: { content_id: contentId },
         });
         // Eliminar el contenido
         yield content.destroy();
-        return res.status(200).json({ message: "Contenido eliminado correctamente" });
+        return res
+            .status(200)
+            .json({ message: "Contenido eliminado correctamente" });
     }
     catch (err) {
         console.error("Error al eliminar contenido:", err);
-        return res.status(500).json({ message: "Error interno al eliminar contenido" });
+        return res
+            .status(500)
+            .json({ message: "Error interno al eliminar contenido" });
     }
 });
 exports.delete_content_by_id = delete_content_by_id;
@@ -307,6 +313,6 @@ exports.default = {
     get_content_training_by_id,
     get_content_nutrition_by_id,
     post_content_with_upload: exports.post_content_with_upload,
-    delete_content_by_id: exports.delete_content_by_id
+    delete_content_by_id: exports.delete_content_by_id,
 };
 //# sourceMappingURL=contentService.js.map
