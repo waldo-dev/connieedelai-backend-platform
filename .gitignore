@@ -38,12 +38,14 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 build/src/config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json
+build/src/config/connieedelai-c1edf-466220-3e8259af3da0.json
 
 # Dependency directories
 node_modules/
 jspm_packages/
 
 src/config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json
+src/config/connieedelai-c1edf-466220-3e8259af3da0.json
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

@@ -2,7 +2,8 @@ import admin from "firebase-admin";
 import { Readable } from "stream";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import serviceAccountJson from "../config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json";
+// import serviceAccountJson from "../config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json";
+import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
 import { Storage } from "@google-cloud/storage";
 
 const serviceAccount = serviceAccountJson as admin.ServiceAccount;
@@ -10,7 +11,7 @@ const serviceAccount = serviceAccountJson as admin.ServiceAccount;
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: "connieedelai-c1edf",
+    storageBucket: "connieedelai-c1edf-466220.firebasestorage.app",
   });
 }
 

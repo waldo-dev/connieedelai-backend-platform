@@ -16,12 +16,13 @@ exports.uploadFileToFirebase = void 0;
 const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const stream_1 = require("stream");
 const uuid_1 = require("uuid");
-const connieedelai_c1edf_firebase_adminsdk_fbsvc_ac47caa06a_json_1 = __importDefault(require("../config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json"));
-const serviceAccount = connieedelai_c1edf_firebase_adminsdk_fbsvc_ac47caa06a_json_1.default;
+// import serviceAccountJson from "../config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json";
+const connieedelai_c1edf_466220_3e8259af3da0_json_1 = __importDefault(require("../config/connieedelai-c1edf-466220-3e8259af3da0.json"));
+const serviceAccount = connieedelai_c1edf_466220_3e8259af3da0_json_1.default;
 if (!firebase_admin_1.default.apps.length) {
     firebase_admin_1.default.initializeApp({
         credential: firebase_admin_1.default.credential.cert(serviceAccount),
-        storageBucket: "connieedelai-c1edf",
+        storageBucket: "connieedelai-c1edf-466220.firebasestorage.app",
     });
 }
 const bucket = firebase_admin_1.default.storage().bucket();
