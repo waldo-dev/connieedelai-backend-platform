@@ -200,86 +200,75 @@ const get_content_nutrition_by_id = async (
   }
 };
 
-// const put_content_by_id = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//    const id = req.params.id;
-//   const dataPut = req.body;
+const put_content_by_id = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = req.params.id;
+    const dataPut = req.body;
 
-//   // Buscar el contenido en la base de datos
-//   const objectDB = await Content.findByPk(id);
-//   if (!objectDB) {
-//     return res.status(404).json({ message: "Objeto no encontrado" });
-//   }
+    // Buscar el contenido en la base de datos
+    const objectDB = await Content.findByPk(id);
+    if (!objectDB) {
+      return res.status(404).json({ message: "Contenido no encontrado" });
+    }
 
-//   // Validar si hay archivos para subir (podría ser uno o más archivos)
-//   const files = req.files as Express.Multer.File[]; // Asegúrate de que req.files sea un array de archivos
+    // Inicializamos valores que se pueden actualizar
+    let updatedFields: any = { ...dataPut };
 
-//   // Si hay archivos, procesarlos
-//   if (files && files.length > 0) {
-//     // Inicializar URLs para los archivos
-//     let videoOrPdfUrl: string | undefined;
-//     let imageUrl: string | undefined;
+    // Procesar archivos si vienen
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-//     // Separar archivos de video/PDF e imagen
-//     const videoOrPdfFile = files.find(file => file.mimetype === 'application/pdf' || file.mimetype.startsWith('video/'));
-//     const imageFile = files.find(file => file.mimetype.startsWith('image/'));
+    if (files) {
+      // Si viene imagen de vista previa
+      if (files.prev_url && files.prev_url.length > 0) {
+        const imageFile = files.prev_url[0];
+        if (!imageFile.mimetype.startsWith("image/")) {
+          return res.status(400).json({ message: "La vista previa debe ser una imagen" });
+        }
+        const imageExtension = mime.extension(imageFile.mimetype);
+        const imageUniqueName = `${uuidv4()}.${imageExtension}`;
+        const imagePathInStorage = `contents/images/${imageUniqueName}`;
 
-//     // Subida de archivo de video/PDF
-//     if (videoOrPdfFile) {
-//       const videoOrPdfExtension = mime.extension(videoOrPdfFile.mimetype);
-//       const videoOrPdfUniqueName = `${uuidv4()}.${videoOrPdfExtension}`;
-//       const videoOrPdfPathInWasabi = `contents/${videoOrPdfUniqueName}`;
-//       const videoOrPdfFileStream = fs.createReadStream(videoOrPdfFile.path);
-//       const videoOrPdfUploadResult = await uploadFileToFirebase(videoOrPdfPathInWasabi, videoOrPdfFileStream, videoOrPdfFile.mimetype);
-//       fs.unlinkSync(videoOrPdfFile.path); // Limpiar archivo temporal
-//       // videoOrPdfUrl = videoOrPdfUploadResult.Location;
-//     }
+        const imageUrl = await uploadFileToFirebase(
+          imagePathInStorage,
+          imageFile.buffer,
+          imageFile.mimetype
+        );
 
-//     // Subida de imagen
-//     if (imageFile) {
-//       const imageExtension = mime.extension(imageFile.mimetype);
-//       const imageUniqueName = `${uuidv4()}.${imageExtension}`;
-//       const imagePathInWasabi = `contents/images/${imageUniqueName}`;
-//       const imageFileStream = fs.createReadStream(imageFile.path);
-//       const imageUploadResult = await uploadFileToWasabi(imagePathInWasabi, imageFileStream, imageFile.mimetype);
-//       fs.unlinkSync(imageFile.path); // Limpiar archivo temporal
-//       imageUrl = imageUploadResult.Location;
-//     }
+        updatedFields.prev_url = imageUrl;
+      }
 
-//     // Actualizar el objeto en la base de datos, incluyendo nuevos URLs cuando están disponibles
-//     const updatedData = {
-//       ...dataPut,
-//       ...(videoOrPdfUrl && { url: videoOrPdfUrl }), // Solo incluye url si existe
-//       ...(imageUrl && { image_url: imageUrl }), // Solo incluye image_url si existe
-//     };
+      // Si viene archivo principal (video o PDF)
+      if (files.file && files.file.length > 0) {
+        const mainFile = files.file[0];
+        const fileExtension = mime.extension(mainFile.mimetype);
+        const uniqueName = `${uuidv4()}.${fileExtension}`;
+        const folder = mainFile.mimetype === "application/pdf" ? "pdf" : "video";
+        const filePathInStorage = `contents/${folder}/${uniqueName}`;
 
-//     const objectUpdated = await objectDB.update(updatedData).catch(err => {
-//       return { err }; // Manejando el error
-//     });
+        const fileUrl = await uploadFileToFirebase(
+          filePathInStorage,
+          mainFile.buffer,
+          mainFile.mimetype
+        );
 
-//     if ((objectUpdated as any).err) {
-//       const { errors } = (objectUpdated as any).err;
-//       return res.status(404).json(errors);
-//     } else {
-//       return res.status(200).json(objectUpdated);
-//     }
-//   } else {
-//     // Si no hay archivos, simplemente actualiza el contenido existente
-//     const objectUpdated = await objectDB.update(dataPut).catch(err => {
-//       return { err }; // Manejando el error
-//     });
+        updatedFields.url = fileUrl;
+      }
+    }
 
-//     if ((objectUpdated as any).err) {
-//       const { errors } = (objectUpdated as any).err;
-//       return res.status(404).json(errors);
-//     } else {
-//       return res.status(200).json(objectUpdated);
-//     }
-//   }
-// };
+    // Actualizar registro
+    const updatedObject = await objectDB.update(updatedFields);
+
+    return res.status(200).json(updatedObject);
+  } catch (err) {
+    console.error("Error al actualizar contenido:", err);
+    return res.status(500).json({ message: "Error interno al actualizar" });
+  }
+};
+
 
 export const post_content_with_upload = async (
   req: Request,
@@ -414,7 +403,7 @@ export const delete_content_by_id = async (
 
 export default {
   get_content_by_id,
-  // put_content_by_id,
+  put_content_by_id,
   generate_upload_url,
   get_content,
   post_content,

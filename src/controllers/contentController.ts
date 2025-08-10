@@ -17,8 +17,8 @@ const get_content = async (req: Request, res: Response, next: NextFunction) => {
   return await contentService.get_content_by_id(req, res, next);
 };
 
-const put_content = async (req: Request, res: Response, next: NextFunction) => {
-  // return await contentService.put_content_by_id(req, res, next);
+const put_content_by_id = async (req: Request, res: Response, next: NextFunction) => {
+  return await contentService.put_content_by_id(req, res, next);
 };
 
 const get_content_training = async (req: Request, res: Response, next: NextFunction) => {
@@ -54,7 +54,7 @@ export default {
   get_content_all,
   post_content,
   get_content,
-  put_content,
+  put_content_by_id,
   get_content_training,
   get_content_nutrition,
   get_content_training_by_id,

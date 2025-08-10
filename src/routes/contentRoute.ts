@@ -31,6 +31,7 @@ contentRoute
   contentRoute
   .route("/:id")
   .get(isAuthorized, contentControllers.get_content)
+  .put(isAuthorized, contentControllers.put_content_by_id)
   .delete(isAuthorized, contentControllers.delete_content_by_id)
 
 export default contentRoute;

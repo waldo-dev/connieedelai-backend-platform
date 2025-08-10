@@ -22,8 +22,8 @@ const post_content = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
 const get_content = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield contentService_1.default.get_content_by_id(req, res, next);
 });
-const put_content = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    // return await contentService.put_content_by_id(req, res, next);
+const put_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield contentService_1.default.put_content_by_id(req, res, next);
 });
 const get_content_training = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield contentService_1.default.get_content_training(req, res, next);
@@ -50,7 +50,7 @@ exports.default = {
     get_content_all,
     post_content,
     get_content,
-    put_content,
+    put_content_by_id,
     get_content_training,
     get_content_nutrition,
     get_content_training_by_id,
