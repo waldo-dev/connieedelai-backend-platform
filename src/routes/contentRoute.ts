@@ -9,9 +9,12 @@ contentRoute
   .route("/")
   .get(isAuthorized, contentControllers.get_content_all)
   .post(isAuthorized,  upload.fields([
-      { name: "file", maxCount: 1 },
-      { name: "prev_url", maxCount: 1 },
-    ]), contentControllers.post_content_with_upload);
+  { name: "prev_url", maxCount: 1 },
+]), contentControllers.post_content_with_upload);
+  
+contentRoute
+  .route("/signedUrl")
+  .post(isAuthorized, contentControllers.generate_upload_url);
   
   contentRoute.route("/training")
   .get(isAuthorized, contentControllers.get_content_training)

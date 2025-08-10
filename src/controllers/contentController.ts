@@ -41,6 +41,10 @@ const post_content_with_upload = async (req: Request, res: Response, next: NextF
   return await contentService.post_content_with_upload(req, res, next);
 };
 
+const generate_upload_url = async (req: Request, res: Response, next: NextFunction) => {
+  return await contentService.generate_upload_url(req, res, next);
+};
+
 const delete_content_by_id = async (req: Request, res: Response, next: NextFunction) => {
   return await contentService.delete_content_by_id(req, res, next);
 };
@@ -57,4 +61,5 @@ export default {
   get_content_nutrition_by_id,
   post_content_with_upload,
   delete_content_by_id,
+  generate_upload_url
 };

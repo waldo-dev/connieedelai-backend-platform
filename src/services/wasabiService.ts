@@ -30,41 +30,58 @@ export const uploadFileToFirebase = async (
   contentType: string
 ): Promise<string> => {
   try {
-  const file = bucket.file(key);
-  const uuid = uuidv4();
+    const file = bucket.file(key);
 
-  const metadata = {
-    metadata: {
-      firebaseStorageDownloadTokens: uuid,
-    },
-    contentType,
-    cacheControl: "public,max-age=31536000",
-  };
+    const metadata = {
+      contentType,
+      cacheControl: "public,max-age=31536000",
+    };
 
-  await new Promise<void>((resolve, reject) => {
-    const writeStream = file.createWriteStream({ metadata });
-    console.log("🚀 ~ uploadFileToFirebase ~ writeStream:", writeStream)
-    const input = buffer instanceof Readable ? buffer : Readable.from(buffer);
-    console.log("🚀 ~ uploadFileToFirebase ~ input:", input)
+    await new Promise<void>((resolve, reject) => {
+      const writeStream = file.createWriteStream({ 
+        metadata,
+       });
 
-     writeStream.on("error", (err) => {
+      writeStream.on("error", (err) => {
         console.error("🔥 Error escribiendo en Firebase Storage:", err);
         reject(err);
       });
 
-      writeStream.on("finish", () => {
-        console.log("✅ Archivo subido correctamente:", key);
-        resolve();
-      });
+      writeStream.on("finish", resolve);
 
-    input.pipe(writeStream).on("error", reject).on("finish", resolve);
-  });
+      const input = buffer instanceof Readable ? buffer : Readable.from(buffer);
+      input.pipe(writeStream);
+    });
 
-  return `https://firebasestorage.googleapis.com/v0/b/${
-    bucket.name
-  }/o/${encodeURIComponent(key)}?alt=media&token=${uuid}`;
-} catch (err){
-   console.error("❌ Error en uploadFileToFirebase:", err);
+    // Hacer que el archivo sea completamente público
+    await file.makePublic();
+
+    // Retornar URL pública (sirve para imágenes, videos, PDFs, etc.)
+    return `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(
+      key
+    )}`;
+  } catch (err) {
+    console.error("❌ Error en uploadFileToFirebase:", err);
     throw err;
-}
+  }
 };
+
+
+const storage = new Storage({
+  projectId: serviceAccountJson.project_id,
+  credentials: serviceAccountJson,
+});
+
+export async function generateUploadSignedUrl(key: string, contentType: string) {
+  const file = bucket.file(key);
+
+  const options = {
+    version: "v4" as const,
+    action: "write" as const,
+    expires: Date.now() + 15 * 60 * 1000, // 15 minutos
+    contentType,
+  };
+
+  const [url] = await file.getSignedUrl(options);
+  return url;
+}

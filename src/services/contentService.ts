@@ -3,11 +3,21 @@ import { FindOptions, ValidationError } from "sequelize";
 import { Content } from "../models/content";
 import { ContentSection, Section, Module, ContentModule } from "../models";
 import mime from "mime-types";
-import { uploadFileToFirebase } from "./wasabiService";
+import { uploadFileToFirebase, generateUploadSignedUrl } from "./wasabiService";
 import { v4 as uuidv4 } from "uuid";
 import { Readable } from "stream";
 import fs from "fs";
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
+import { Storage } from "@google-cloud/storage";
+import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
+
+const storage = new Storage({
+  projectId: serviceAccountJson.project_id,
+  credentials: serviceAccountJson,
+});
+
+const bucketName = "connieedelai-c1edf-466220.firebasestorage.app";
+const bucket = storage.bucket(bucketName);
 
 const get_content = async (req: Request, res: Response, next: NextFunction) => {
   const result = await Content.findAll();
@@ -277,45 +287,42 @@ export const post_content_with_upload = async (
   next: NextFunction
 ) => {
   try {
-    const { title, description, type, is_downloadable, moduleId } = req.body;
+    const { title, description, type, is_downloadable, moduleId, file } =
+      req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-    const files: any = req.files;
-
-    if (!files || !moduleId) {
-      return res.status(400).json({ message: "Faltan archivos o moduleId" });
-    }
-
-    // Encontrar archivos según tipo
-    const videoOrPdfFile = files.file.find(
-      (file: any) =>
-        file.mimetype === "application/pdf" ||
-        file.mimetype.startsWith("video/")
-    );
-    const imageFile = files.prev_url.find((file: any) =>
-      file.mimetype.startsWith("image/")
-    );
-
-    if (!videoOrPdfFile || !imageFile) {
+    // Validar que existe el archivo de vista previa (imagen)
+    if (!files || !files.prev_url || files.prev_url.length === 0) {
       return res
         .status(400)
-        .json({ message: "Se requieren un archivo de video/PDF y una imagen" });
+        .json({ message: "Se requiere la imagen de vista previa" });
     }
 
-    const videoOrPdfExtension = mime.extension(videoOrPdfFile.mimetype);
-    const videoOrPdfUniqueName = `${uuidv4()}.${videoOrPdfExtension}`;
-    const videoOrPdfPathInStorage = `contents/${
-      type == "pdf" ? "pdf" : "video"
-    }/${videoOrPdfUniqueName}`;
+    // Extraer la imagen (prev_url)
+    const imageFile = files.prev_url[0];
 
-    const videoOrPdfUrl = await uploadFileToFirebase(
-      videoOrPdfPathInStorage,
-      videoOrPdfFile.buffer,
-      videoOrPdfFile.mimetype
-    );
-    console.log(
-      "🚀 ~ post_content_with_upload ~ videoOrPdfUrl:",
-      videoOrPdfUrl
-    );
+    // Validar que es imagen
+    if (!imageFile.mimetype.startsWith("image/")) {
+      return res
+        .status(400)
+        .json({ message: "El archivo de vista previa debe ser una imagen" });
+    }
+
+    // const videoOrPdfExtension = mime.extension(videoOrPdfFile.mimetype);
+    // const videoOrPdfUniqueName = `${uuidv4()}.${videoOrPdfExtension}`;
+    // const videoOrPdfPathInStorage = `contents/${
+    //   type == "pdf" ? "pdf" : "video"
+    // }/${videoOrPdfUniqueName}`;
+
+    // const videoOrPdfUrl = await uploadFileToFirebase(
+    //   videoOrPdfPathInStorage,
+    //   videoOrPdfFile.buffer,
+    //   videoOrPdfFile.mimetype
+    // );
+    // console.log(
+    //   "🚀 ~ post_content_with_upload ~ videoOrPdfUrl:",
+    //   videoOrPdfUrl
+    // );
 
     const imageExtension = mime.extension(imageFile.mimetype);
     const imageUniqueName = `${uuidv4()}.${imageExtension}`;
@@ -333,7 +340,7 @@ export const post_content_with_upload = async (
       description,
       type,
       is_downloadble: is_downloadable === "true",
-      url: videoOrPdfUrl,
+      url: file,
       prev_url: imageUrl,
       visible: true,
     });
@@ -344,10 +351,29 @@ export const post_content_with_upload = async (
       module_id: moduleId,
     });
 
-    return res.status(201).json(videoOrPdfUrl);
+    return res.status(201).json(contentCreated);
   } catch (err) {
     console.error("Error al subir contenido:", err);
     return res.status(500).json({ message: "Error interno" });
+  }
+};
+
+export const generate_upload_url = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { filename, contentType } = req.body;
+    if (!filename || !contentType) {
+      return res.status(400).json({ error: "Falta filename o contentType" });
+    }
+
+    const url = await generateUploadSignedUrl(filename, contentType);
+    res.json({ url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error generando URL" });
   }
 };
 
@@ -389,6 +415,7 @@ export const delete_content_by_id = async (
 export default {
   get_content_by_id,
   // put_content_by_id,
+  generate_upload_url,
   get_content,
   post_content,
   get_content_training,

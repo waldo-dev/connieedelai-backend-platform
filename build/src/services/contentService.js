@@ -12,13 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.delete_content_by_id = exports.post_content_with_upload = void 0;
+exports.delete_content_by_id = exports.generate_upload_url = exports.post_content_with_upload = void 0;
 const content_1 = require("../models/content");
 const models_1 = require("../models");
 const mime_types_1 = __importDefault(require("mime-types"));
 const wasabiService_1 = require("./wasabiService");
 const uuid_1 = require("uuid");
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
+const storage_1 = require("@google-cloud/storage");
+const connieedelai_c1edf_466220_3e8259af3da0_json_1 = __importDefault(require("../config/connieedelai-c1edf-466220-3e8259af3da0.json"));
+const storage = new storage_1.Storage({
+    projectId: connieedelai_c1edf_466220_3e8259af3da0_json_1.default.project_id,
+    credentials: connieedelai_c1edf_466220_3e8259af3da0_json_1.default,
+});
+const bucketName = "connieedelai-c1edf-466220.firebasestorage.app";
+const bucket = storage.bucket(bucketName);
 const get_content = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield content_1.Content.findAll();
     if (!result)
@@ -222,25 +230,36 @@ const get_content_nutrition_by_id = (req, res, next) => __awaiter(void 0, void 0
 // };
 const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { title, description, type, is_downloadable, moduleId } = req.body;
+        const { title, description, type, is_downloadable, moduleId, file } = req.body;
         const files = req.files;
-        if (!files || !moduleId) {
-            return res.status(400).json({ message: "Faltan archivos o moduleId" });
-        }
-        // Encontrar archivos según tipo
-        const videoOrPdfFile = files.file.find((file) => file.mimetype === "application/pdf" ||
-            file.mimetype.startsWith("video/"));
-        const imageFile = files.prev_url.find((file) => file.mimetype.startsWith("image/"));
-        if (!videoOrPdfFile || !imageFile) {
+        // Validar que existe el archivo de vista previa (imagen)
+        if (!files || !files.prev_url || files.prev_url.length === 0) {
             return res
                 .status(400)
-                .json({ message: "Se requieren un archivo de video/PDF y una imagen" });
+                .json({ message: "Se requiere la imagen de vista previa" });
         }
-        const videoOrPdfExtension = mime_types_1.default.extension(videoOrPdfFile.mimetype);
-        const videoOrPdfUniqueName = `${(0, uuid_1.v4)()}.${videoOrPdfExtension}`;
-        const videoOrPdfPathInStorage = `contents/${type == "pdf" ? "pdf" : "video"}/${videoOrPdfUniqueName}`;
-        const videoOrPdfUrl = yield (0, wasabiService_1.uploadFileToFirebase)(videoOrPdfPathInStorage, videoOrPdfFile.buffer, videoOrPdfFile.mimetype);
-        console.log("🚀 ~ post_content_with_upload ~ videoOrPdfUrl:", videoOrPdfUrl);
+        // Extraer la imagen (prev_url)
+        const imageFile = files.prev_url[0];
+        // Validar que es imagen
+        if (!imageFile.mimetype.startsWith("image/")) {
+            return res
+                .status(400)
+                .json({ message: "El archivo de vista previa debe ser una imagen" });
+        }
+        // const videoOrPdfExtension = mime.extension(videoOrPdfFile.mimetype);
+        // const videoOrPdfUniqueName = `${uuidv4()}.${videoOrPdfExtension}`;
+        // const videoOrPdfPathInStorage = `contents/${
+        //   type == "pdf" ? "pdf" : "video"
+        // }/${videoOrPdfUniqueName}`;
+        // const videoOrPdfUrl = await uploadFileToFirebase(
+        //   videoOrPdfPathInStorage,
+        //   videoOrPdfFile.buffer,
+        //   videoOrPdfFile.mimetype
+        // );
+        // console.log(
+        //   "🚀 ~ post_content_with_upload ~ videoOrPdfUrl:",
+        //   videoOrPdfUrl
+        // );
         const imageExtension = mime_types_1.default.extension(imageFile.mimetype);
         const imageUniqueName = `${(0, uuid_1.v4)()}.${imageExtension}`;
         const imagePathInStorage = `contents/images/${imageUniqueName}`;
@@ -251,7 +270,7 @@ const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, v
             description,
             type,
             is_downloadble: is_downloadable === "true",
-            url: videoOrPdfUrl,
+            url: file,
             prev_url: imageUrl,
             visible: true,
         });
@@ -260,7 +279,7 @@ const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, v
             content_id: contentCreated.id,
             module_id: moduleId,
         });
-        return res.status(201).json(videoOrPdfUrl);
+        return res.status(201).json(contentCreated);
     }
     catch (err) {
         console.error("Error al subir contenido:", err);
@@ -268,6 +287,21 @@ const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, v
     }
 });
 exports.post_content_with_upload = post_content_with_upload;
+const generate_upload_url = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { filename, contentType } = req.body;
+        if (!filename || !contentType) {
+            return res.status(400).json({ error: "Falta filename o contentType" });
+        }
+        const url = yield (0, wasabiService_1.generateUploadSignedUrl)(filename, contentType);
+        res.json({ url });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error generando URL" });
+    }
+});
+exports.generate_upload_url = generate_upload_url;
 const delete_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const contentId = parseInt(req.params.id);
@@ -299,6 +333,7 @@ exports.delete_content_by_id = delete_content_by_id;
 exports.default = {
     get_content_by_id,
     // put_content_by_id,
+    generate_upload_url: exports.generate_upload_url,
     get_content,
     post_content,
     get_content_training,

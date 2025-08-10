@@ -40,6 +40,9 @@ const get_content_nutrition_by_id = (req, res, next) => __awaiter(void 0, void 0
 const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield contentService_1.default.post_content_with_upload(req, res, next);
 });
+const generate_upload_url = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield contentService_1.default.generate_upload_url(req, res, next);
+});
 const delete_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield contentService_1.default.delete_content_by_id(req, res, next);
 });
@@ -54,5 +57,6 @@ exports.default = {
     get_content_nutrition_by_id,
     post_content_with_upload,
     delete_content_by_id,
+    generate_upload_url
 };
 //# sourceMappingURL=contentController.js.map
