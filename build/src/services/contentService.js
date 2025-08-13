@@ -161,7 +161,6 @@ const get_content_nutrition_by_id = (req, res, next) => __awaiter(void 0, void 0
 const put_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = req.params.id;
-        console.log("🚀 ~ put_content_by_id ~ req.params:", req.params);
         const dataPut = req.body;
         // Buscar el contenido en la base de datos
         const objectDB = yield content_1.Content.findByPk(id);
