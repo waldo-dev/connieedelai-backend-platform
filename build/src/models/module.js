@@ -9,6 +9,7 @@ const Modules = connection.define(modelName, {
     description: { type: DataTypes.STRING, allowNull: true, },
     type: { type: DataTypes.STRING, allowNull: true },
     is_downloadble: { type: DataTypes.BOOLEAN, allowNull: true },
+    bonus: { type: DataTypes.BOOLEAN, allowNull: true },
     difficulty: { type: DataTypes.STRING, allowNull: true },
     prev_url: { type: DataTypes.STRING, allowNull: true },
     section_id: { type: DataTypes.NUMBER, allowNull: true },

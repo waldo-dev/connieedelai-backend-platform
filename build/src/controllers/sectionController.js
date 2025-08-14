@@ -31,12 +31,16 @@ const get_contents_by_section_grouped_by_module = (req, res, next) => __awaiter(
 const get_modules_by_section = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield sectionService_1.default.get_modules_by_section(req, res, next);
 });
+const get_bonus_by_section = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield sectionService_1.default.get_modules_by_section(req, res, next);
+});
 exports.default = {
     get_section,
     post_section,
     get_section_by_id,
     put_section_by_id,
     get_contents_by_section_grouped_by_module,
-    get_modules_by_section
+    get_modules_by_section,
+    get_bonus_by_section,
 };
 //# sourceMappingURL=sectionController.js.map

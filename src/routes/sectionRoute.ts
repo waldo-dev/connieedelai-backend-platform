@@ -18,6 +18,10 @@ sectionRoute
     .route("/:id/modules")
     .get(isAuthorized, sectionControllers.get_modules_by_section)
   
+  sectionRoute
+    .route("/:id/modules/bonus")
+    .get(isAuthorized, sectionControllers.get_modules_by_section)
+  
   
   sectionRoute
     .route("/:id/contents-by-module")

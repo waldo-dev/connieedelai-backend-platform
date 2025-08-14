@@ -139,6 +139,40 @@ const get_modules_by_section = async (
   }
 };
 
+const get_bonus_by_section = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const sectionId = req.params.id;
+
+    const section: any = await Section.findByPk(sectionId, {
+      include: [
+        {
+          model: Module,
+          through: { attributes: [] },
+          where: { bonus: true },
+          include: [
+            {
+              model: Content,
+              through: { attributes: [] },
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!section) return res.status(404).json({ message: "Section not found" });
+
+    const modules = section.dataValues.modules;
+    return res.status(200).json(modules);
+  } catch (err) {
+    console.error("Error al obtener módulos de la sección:", err);
+    return res.status(500).json({ message: "Error interno" });
+  }
+};
+
 
 export default {
   get_section_by_id,
@@ -146,5 +180,6 @@ export default {
   get_section,
   post_section,
   get_contents_by_section_grouped_by_module,
-  get_modules_by_section
+  get_modules_by_section,
+  get_bonus_by_section
 };

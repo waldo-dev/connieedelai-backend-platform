@@ -19,6 +19,9 @@ sectionRoute
     .route("/:id/modules")
     .get(auth_1.isAuthorized, controllers_1.sectionControllers.get_modules_by_section);
 sectionRoute
+    .route("/:id/modules/bonus")
+    .get(auth_1.isAuthorized, controllers_1.sectionControllers.get_modules_by_section);
+sectionRoute
     .route("/:id/contents-by-module")
     .get(auth_1.isAuthorized, controllers_1.sectionControllers.get_contents_by_section_grouped_by_module);
 exports.default = sectionRoute;

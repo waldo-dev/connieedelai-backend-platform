@@ -118,12 +118,41 @@ const get_modules_by_section = (req, res, next) => __awaiter(void 0, void 0, voi
         return res.status(500).json({ message: "Error interno" });
     }
 });
+const get_bonus_by_section = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const sectionId = req.params.id;
+        const section = yield models_1.Section.findByPk(sectionId, {
+            include: [
+                {
+                    model: models_1.Module,
+                    through: { attributes: [] },
+                    where: { bonus: true },
+                    include: [
+                        {
+                            model: models_1.Content,
+                            through: { attributes: [] },
+                        },
+                    ],
+                },
+            ],
+        });
+        if (!section)
+            return res.status(404).json({ message: "Section not found" });
+        const modules = section.dataValues.modules;
+        return res.status(200).json(modules);
+    }
+    catch (err) {
+        console.error("Error al obtener módulos de la sección:", err);
+        return res.status(500).json({ message: "Error interno" });
+    }
+});
 exports.default = {
     get_section_by_id,
     put_section_by_id,
     get_section,
     post_section,
     get_contents_by_section_grouped_by_module,
-    get_modules_by_section
+    get_modules_by_section,
+    get_bonus_by_section
 };
 //# sourceMappingURL=sectionService.js.map
