@@ -34,4 +34,7 @@ contentRoute
   .put(isAuthorized, contentControllers.put_content_by_id)
   .delete(isAuthorized, contentControllers.delete_content_by_id)
 
+  contentRoute.route("/section/:id")
+  .get(isAuthorized, contentControllers.get_content_by_section)
+
 export default contentRoute;
