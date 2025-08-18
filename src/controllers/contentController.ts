@@ -21,6 +21,10 @@ const put_content_by_id = async (req: Request, res: Response, next: NextFunction
   return await contentService.put_content_by_id(req, res, next);
 };
 
+const get_content_by_section = async (req: Request, res: Response, next: NextFunction) => {
+  return await contentService.get_content_by_section(req, res, next);
+};
+
 const get_content_training = async (req: Request, res: Response, next: NextFunction) => {
   return await contentService.get_content_training(req, res, next);
 };
@@ -61,5 +65,6 @@ export default {
   get_content_nutrition_by_id,
   post_content_with_upload,
   delete_content_by_id,
-  generate_upload_url
+  generate_upload_url,
+  get_content_by_section
 };

@@ -10,6 +10,7 @@ import fs from "fs";
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
 import { Storage } from "@google-cloud/storage";
 import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
+import ContentSections from "../models/content_section";
 
 const storage = new Storage({
   projectId: serviceAccountJson.project_id,
@@ -401,6 +402,32 @@ export const delete_content_by_id = async (
   }
 };
 
+export const get_content_by_section = async ( 
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+   try {
+    const sectionId = req.params.id;  // Recibe el ID de la sección desde los parámetros de la URL.
+
+    const sectionContent = await ContentSections.findOne({
+      where: { section_id: sectionId }
+    })
+    // Buscar las secciones que coinciden con el ID de la sección
+    const content = await Content.findByPk(sectionContent?.dataValues.content_id);
+    console.log("🚀 ~ get_content_by_section ~ content:", content)
+
+    if (!content) {
+      return res.status(404).json({ message: "Contenido no encontrado" });
+    }
+
+    return res.status(200).json(content);
+  } catch (err) {
+    console.error("Error al obtener contenidos por sección:", err);
+    return res.status(500).json({ message: "Error interno al obtener contenidos por sección" });
+  }
+};
+
 export default {
   get_content_by_id,
   put_content_by_id,
@@ -413,4 +440,5 @@ export default {
   get_content_nutrition_by_id,
   post_content_with_upload,
   delete_content_by_id,
+  get_content_by_section
 };

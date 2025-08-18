@@ -30,5 +30,7 @@ contentRoute
     .get(auth_1.isAuthorized, controllers_1.contentControllers.get_content)
     .put(auth_1.isAuthorized, controllers_1.contentControllers.put_content_by_id)
     .delete(auth_1.isAuthorized, controllers_1.contentControllers.delete_content_by_id);
+contentRoute.route("/section/:id")
+    .get(auth_1.isAuthorized, controllers_1.contentControllers.get_content_by_section);
 exports.default = contentRoute;
 //# sourceMappingURL=contentRoute.js.map
