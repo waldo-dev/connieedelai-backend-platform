@@ -409,14 +409,14 @@ export const get_content_by_section = async (
 ) => {
    try {
     const sectionId = req.params.id;  // Recibe el ID de la sección desde los parámetros de la URL.
+    console.log("🚀 ~ get_content_by_section ~ sectionId:", sectionId)
 
     const sectionContent = await ContentSections.findOne({
       where: { section_id: sectionId }
     })
     // Buscar las secciones que coinciden con el ID de la sección
     const content = await Content.findByPk(sectionContent?.dataValues.content_id);
-    console.log("🚀 ~ get_content_by_section ~ content:", content)
-
+    
     if (!content) {
       return res.status(404).json({ message: "Contenido no encontrado" });
     }

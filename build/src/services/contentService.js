@@ -310,12 +310,12 @@ exports.delete_content_by_id = delete_content_by_id;
 const get_content_by_section = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const sectionId = req.params.id; // Recibe el ID de la sección desde los parámetros de la URL.
+        console.log("🚀 ~ get_content_by_section ~ sectionId:", sectionId);
         const sectionContent = yield content_section_1.default.findOne({
             where: { section_id: sectionId }
         });
         // Buscar las secciones que coinciden con el ID de la sección
         const content = yield content_1.Content.findByPk(sectionContent === null || sectionContent === void 0 ? void 0 : sectionContent.dataValues.content_id);
-        console.log("🚀 ~ get_content_by_section ~ content:", content);
         if (!content) {
             return res.status(404).json({ message: "Contenido no encontrado" });
         }
