@@ -27,6 +27,7 @@ const models_1 = require("../models");
 const mime_types_1 = __importDefault(require("mime-types"));
 const wasabiService_1 = require("./wasabiService");
 const uuid_1 = require("uuid");
+const { Sequelize } = require("sequelize");
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
 const get_module = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield models_1.Module.findAll();
@@ -131,10 +132,12 @@ const get_module_with_contents = (req, res, next) => __awaiter(void 0, void 0, v
             include: [
                 {
                     model: models_1.Content,
-                    as: "contents", // debe coincidir con el alias `as` definido en la relación
+                    as: "contents",
                 },
             ],
+            order: [[{ model: models_1.Content, as: "contents" }, "createdAt", "ASC"]],
         });
+        console.log("🚀 ~ get_module_with_contents ~ module:", module === null || module === void 0 ? void 0 : module.dataValues.contents);
         if (!module)
             return res.status(404).json({ message: "Módulo no encontrado" });
         return res.status(200).json(module);

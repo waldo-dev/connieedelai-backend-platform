@@ -4,6 +4,7 @@ import { Section, Content, Module, ContentModule } from "../models";
 import mime from "mime-types";
 import { uploadFileToFirebase } from "./wasabiService";
 import { v4 as uuidv4 } from "uuid";
+const { Sequelize } = require("sequelize");
 import fs from "fs";
 // import { getWasabiFileUrl } from "../services/wasabiService"; // o la ruta donde tengas la función
 
@@ -107,7 +108,7 @@ const put_module_by_id = async (
   const id = req.params.id;
   const dataPut = req.body;
   const image = req.file;
-  if(image){
+  if (image) {
     const extension = mime.extension(image.mimetype);
     const uniqueName = `${uuidv4()}.${extension}`;
     const pathInWasabi = `images/${uniqueName}`;
@@ -149,10 +150,12 @@ const get_module_with_contents = async (
       include: [
         {
           model: Content,
-          as: "contents", // debe coincidir con el alias `as` definido en la relación
+          as: "contents",
         },
       ],
+      order: [[{ model: Content, as: "contents" }, "createdAt", "ASC"]],
     });
+    console.log("🚀 ~ get_module_with_contents ~ module:", module?.dataValues.contents)
 
     if (!module)
       return res.status(404).json({ message: "Módulo no encontrado" });
