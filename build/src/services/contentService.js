@@ -174,6 +174,7 @@ const put_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         const files = req.files;
         if (files) {
             // Si viene imagen de vista previa
+            console.log("🚀 ~ put_content_by_id ~ files:", files);
             if (files.prev_url && files.prev_url.length > 0) {
                 const imageFile = files.prev_url[0];
                 if (!imageFile.mimetype.startsWith("image/")) {
@@ -184,16 +185,6 @@ const put_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, 
                 const imagePathInStorage = `contents/images/${imageUniqueName}`;
                 const imageUrl = yield (0, wasabiService_1.uploadFileToFirebase)(imagePathInStorage, imageFile.buffer, imageFile.mimetype);
                 updatedFields.prev_url = imageUrl;
-            }
-            // Si viene archivo principal (video o PDF)
-            if (files.file && files.file.length > 0) {
-                const mainFile = files.file[0];
-                const fileExtension = mime_types_1.default.extension(mainFile.mimetype);
-                const uniqueName = `${(0, uuid_1.v4)()}.${fileExtension}`;
-                const folder = mainFile.mimetype === "application/pdf" ? "pdf" : "video";
-                const filePathInStorage = `contents/${folder}/${uniqueName}`;
-                const fileUrl = yield (0, wasabiService_1.uploadFileToFirebase)(filePathInStorage, mainFile.buffer, mainFile.mimetype);
-                updatedFields.url = fileUrl;
             }
         }
         // Actualizar registro
@@ -223,20 +214,6 @@ const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, v
                 .status(400)
                 .json({ message: "El archivo de vista previa debe ser una imagen" });
         }
-        // const videoOrPdfExtension = mime.extension(videoOrPdfFile.mimetype);
-        // const videoOrPdfUniqueName = `${uuidv4()}.${videoOrPdfExtension}`;
-        // const videoOrPdfPathInStorage = `contents/${
-        //   type == "pdf" ? "pdf" : "video"
-        // }/${videoOrPdfUniqueName}`;
-        // const videoOrPdfUrl = await uploadFileToFirebase(
-        //   videoOrPdfPathInStorage,
-        //   videoOrPdfFile.buffer,
-        //   videoOrPdfFile.mimetype
-        // );
-        // console.log(
-        //   "🚀 ~ post_content_with_upload ~ videoOrPdfUrl:",
-        //   videoOrPdfUrl
-        // );
         const imageExtension = mime_types_1.default.extension(imageFile.mimetype);
         const imageUniqueName = `${(0, uuid_1.v4)()}.${imageExtension}`;
         const imagePathInStorage = `contents/images/${imageUniqueName}`;
