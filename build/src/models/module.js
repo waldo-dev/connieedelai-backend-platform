@@ -16,8 +16,8 @@ const Modules = connection.define(modelName, {
     modelName: modelName,
     tableName: modelName,
     updatedAt: false,
-    createdAt: false,
-    freezeTableName: false,
+    createdAt: true,
+    freezeTableName: true,
 });
 exports.default = Modules;
 //# sourceMappingURL=module.js.map

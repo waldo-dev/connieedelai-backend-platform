@@ -91,6 +91,7 @@ const get_module_by_id = async (
           as: "contents", // debe coincidir con el alias `as` definido en la relación
         },
       ],
+      order: [[{ model: Content, as: "contents" }, "createdAt", "ASC"]],
     });
     if (!module) return res.status(404).json("module not found");
 

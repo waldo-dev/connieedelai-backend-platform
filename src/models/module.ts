@@ -12,6 +12,7 @@ interface IModule {
   difficulty?: string;
   prev_url?: string;
   section_id: number;
+  createdAt: Date | string;
 }
 
 interface IModuleDB extends Model {
@@ -23,6 +24,7 @@ interface IModuleDB extends Model {
   difficulty?: string;
   prev_url?: string;
   section_id: number;
+  createdAt: Date | string;
 }
 
 const modelName = "module";
@@ -42,8 +44,8 @@ const Modules = connection.define<IModuleDB>(
     modelName: modelName,
     tableName: modelName,
     updatedAt: false,
-    createdAt: false,
-    freezeTableName: false,
+    createdAt: true,
+    freezeTableName: true,
   }
 );
 
