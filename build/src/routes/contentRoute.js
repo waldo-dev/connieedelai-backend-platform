@@ -6,14 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const controllers_1 = require("../../src/controllers");
 const auth_1 = require("../middleware/auth");
-const upload_1 = require("../middleware/upload");
 const contentRoute = express_1.default.Router();
+// contentRoute
+//   .route("/")
+//   .get(isAuthorized, contentControllers.get_content_all)
+//   .post(isAuthorized,  upload.fields([
+//   { name: "prev_url", maxCount: 1 },
+// ]), contentControllers.post_content_with_upload);
 contentRoute
     .route("/")
     .get(auth_1.isAuthorized, controllers_1.contentControllers.get_content_all)
-    .post(auth_1.isAuthorized, upload_1.upload.fields([
-    { name: "prev_url", maxCount: 1 },
-]), controllers_1.contentControllers.post_content_with_upload);
+    .post(auth_1.isAuthorized, controllers_1.contentControllers.post_content_with_upload);
 contentRoute
     .route("/signedUrl")
     .post(auth_1.isAuthorized, controllers_1.contentControllers.generate_upload_url);

@@ -198,34 +198,38 @@ const put_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, 
 });
 const post_content_with_upload = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { title, description, type, is_downloadable, moduleId, file } = req.body;
-        const files = req.files;
+        const { title, description, type, is_downloadable, moduleId, prev_url, file } = req.body;
+        // const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         // Validar que existe el archivo de vista previa (imagen)
-        if (!files || !files.prev_url || files.prev_url.length === 0) {
-            return res
-                .status(400)
-                .json({ message: "Se requiere la imagen de vista previa" });
-        }
+        // if (!files || !files.prev_url || files.prev_url.length === 0) {
+        //   return res
+        //     .status(400)
+        //     .json({ message: "Se requiere la imagen de vista previa" });
+        // }
         // Extraer la imagen (prev_url)
-        const imageFile = files.prev_url[0];
+        // const imageFile = files.prev_url[0];
         // Validar que es imagen
-        if (!imageFile.mimetype.startsWith("image/")) {
-            return res
-                .status(400)
-                .json({ message: "El archivo de vista previa debe ser una imagen" });
-        }
-        const imageExtension = mime_types_1.default.extension(imageFile.mimetype);
-        const imageUniqueName = `${(0, uuid_1.v4)()}.${imageExtension}`;
-        const imagePathInStorage = `contents/images/${imageUniqueName}`;
-        const imageUrl = yield (0, wasabiService_1.uploadFileToFirebase)(imagePathInStorage, imageFile.buffer, imageFile.mimetype);
-        console.log("🚀 ~ post_content_with_upload ~ imageUrl:", imageUrl);
+        // if (!imageFile.mimetype.startsWith("image/")) {
+        //   return res
+        //     .status(400)
+        //     .json({ message: "El archivo de vista previa debe ser una imagen" });
+        // }
+        // const imageExtension = mime.extension(imageFile.mimetype);
+        // const imageUniqueName = `${uuidv4()}.${imageExtension}`;
+        // const imagePathInStorage = `contents/images/${imageUniqueName}`;
+        // const imageUrl = await uploadFileToFirebase(
+        //   imagePathInStorage,
+        //   imageFile.buffer,
+        //   imageFile.mimetype
+        // );
+        // console.log("🚀 ~ post_content_with_upload ~ imageUrl:", imageUrl);
         const contentCreated = yield content_1.Content.create({
             title,
             description,
             type,
             is_downloadble: is_downloadable === "true",
             url: file,
-            prev_url: imageUrl,
+            prev_url: prev_url,
             visible: true,
         });
         // Relacionar con módulo

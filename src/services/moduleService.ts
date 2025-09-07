@@ -93,6 +93,7 @@ const get_module_by_id = async (
       ],
       order: [[{ model: Content, as: "contents" }, "createdAt", "ASC"]],
     });
+    console.log("🚀 ~ get_module_by_id ~ module:", module)
     if (!module) return res.status(404).json("module not found");
 
     return res.status(200).json(module);

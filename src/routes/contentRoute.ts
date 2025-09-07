@@ -5,12 +5,17 @@ import {upload} from "../middleware/upload";
 
 const contentRoute = express.Router();
 
+// contentRoute
+//   .route("/")
+//   .get(isAuthorized, contentControllers.get_content_all)
+//   .post(isAuthorized,  upload.fields([
+//   { name: "prev_url", maxCount: 1 },
+// ]), contentControllers.post_content_with_upload);
+  
 contentRoute
   .route("/")
   .get(isAuthorized, contentControllers.get_content_all)
-  .post(isAuthorized,  upload.fields([
-  { name: "prev_url", maxCount: 1 },
-]), contentControllers.post_content_with_upload);
+  .post(isAuthorized, contentControllers.post_content_with_upload);
   
 contentRoute
   .route("/signedUrl")

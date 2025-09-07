@@ -261,37 +261,37 @@ export const post_content_with_upload = async (
   next: NextFunction
 ) => {
   try {
-    const { title, description, type, is_downloadable, moduleId, file } =
+    const { title, description, type, is_downloadable, moduleId, prev_url, file } =
       req.body;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    // const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     // Validar que existe el archivo de vista previa (imagen)
-    if (!files || !files.prev_url || files.prev_url.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Se requiere la imagen de vista previa" });
-    }
+    // if (!files || !files.prev_url || files.prev_url.length === 0) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Se requiere la imagen de vista previa" });
+    // }
 
     // Extraer la imagen (prev_url)
-    const imageFile = files.prev_url[0];
+    // const imageFile = files.prev_url[0];
 
     // Validar que es imagen
-    if (!imageFile.mimetype.startsWith("image/")) {
-      return res
-        .status(400)
-        .json({ message: "El archivo de vista previa debe ser una imagen" });
-    }
+    // if (!imageFile.mimetype.startsWith("image/")) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "El archivo de vista previa debe ser una imagen" });
+    // }
 
-    const imageExtension = mime.extension(imageFile.mimetype);
-    const imageUniqueName = `${uuidv4()}.${imageExtension}`;
-    const imagePathInStorage = `contents/images/${imageUniqueName}`;
+    // const imageExtension = mime.extension(imageFile.mimetype);
+    // const imageUniqueName = `${uuidv4()}.${imageExtension}`;
+    // const imagePathInStorage = `contents/images/${imageUniqueName}`;
 
-    const imageUrl = await uploadFileToFirebase(
-      imagePathInStorage,
-      imageFile.buffer,
-      imageFile.mimetype
-    );
-    console.log("🚀 ~ post_content_with_upload ~ imageUrl:", imageUrl);
+    // const imageUrl = await uploadFileToFirebase(
+    //   imagePathInStorage,
+    //   imageFile.buffer,
+    //   imageFile.mimetype
+    // );
+    // console.log("🚀 ~ post_content_with_upload ~ imageUrl:", imageUrl);
 
     const contentCreated = await Content.create({
       title,
@@ -299,7 +299,7 @@ export const post_content_with_upload = async (
       type,
       is_downloadble: is_downloadable === "true",
       url: file,
-      prev_url: imageUrl,
+      prev_url: prev_url,
       visible: true,
     });
 

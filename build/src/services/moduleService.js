@@ -91,6 +91,7 @@ const get_module_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, f
             ],
             order: [[{ model: models_1.Content, as: "contents" }, "createdAt", "ASC"]],
         });
+        console.log("🚀 ~ get_module_by_id ~ module:", module);
         if (!module)
             return res.status(404).json("module not found");
         return res.status(200).json(module);

@@ -17,7 +17,6 @@ const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const stream_1 = require("stream");
 // import serviceAccountJson from "../config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json";
 const connieedelai_c1edf_466220_3e8259af3da0_json_1 = __importDefault(require("../config/connieedelai-c1edf-466220-3e8259af3da0.json"));
-const storage_1 = require("@google-cloud/storage");
 const serviceAccount = connieedelai_c1edf_466220_3e8259af3da0_json_1.default;
 if (!firebase_admin_1.default.apps.length) {
     firebase_admin_1.default.initializeApp({
@@ -26,13 +25,6 @@ if (!firebase_admin_1.default.apps.length) {
     });
 }
 const bucket = firebase_admin_1.default.storage().bucket();
-/**
- * Sube un archivo a Firebase Storage.
- * @param key Ruta y nombre del archivo en el bucket (ej. "videos/entreno1.mp4")
- * @param buffer Contenido del archivo (Buffer o Stream)
- * @param contentType Tipo de contenido (ej. "video/mp4" o "application/pdf")
- * @returns URL de descarga pública temporal
- */
 const uploadFileToFirebase = (key, buffer, contentType) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const file = bucket.file(key);
@@ -63,17 +55,13 @@ const uploadFileToFirebase = (key, buffer, contentType) => __awaiter(void 0, voi
     }
 });
 exports.uploadFileToFirebase = uploadFileToFirebase;
-const storage = new storage_1.Storage({
-    projectId: connieedelai_c1edf_466220_3e8259af3da0_json_1.default.project_id,
-    credentials: connieedelai_c1edf_466220_3e8259af3da0_json_1.default,
-});
 function generateUploadSignedUrl(key, contentType) {
     return __awaiter(this, void 0, void 0, function* () {
         const file = bucket.file(key);
         const options = {
             version: "v4",
             action: "write",
-            expires: Date.now() + 15 * 60 * 1000, // 15 minutos
+            expires: Date.now() + 24 * 60 * 60 * 1000,
             contentType,
         };
         const [url] = yield file.getSignedUrl(options);
