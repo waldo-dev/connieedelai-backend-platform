@@ -107,6 +107,7 @@ const get_modules_by_section = (req, res, next) => __awaiter(void 0, void 0, voi
                     ],
                 },
             ],
+            order: [[models_1.Module, "createdAt", "ASC"]],
         });
         if (!section)
             return res.status(404).json({ message: "Section not found" });

@@ -127,6 +127,7 @@ const get_modules_by_section = async (
           ],
         },
       ],
+      order: [[Module, "createdAt", "ASC"]],
     });
 
     if (!section) return res.status(404).json({ message: "Section not found" });
