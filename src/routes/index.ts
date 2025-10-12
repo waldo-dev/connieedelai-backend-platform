@@ -6,6 +6,8 @@ import contentRoute from "./contentRoute";
 import moduleRoute from "./moduleRoute";
 import sectionRoute from "./sectionRoute";
 import appointmentRoute from "./appointmentRoute";
+import recipientRoute from "./recipientRoute";
+import mailingRoute from "./mailingRoute";
 
 const appRoute = express.Router();
 
@@ -16,5 +18,7 @@ appRoute.use("/content", contentRoute);
 appRoute.use("/module", moduleRoute);
 appRoute.use("/section", sectionRoute);
 appRoute.use("/appointment", appointmentRoute);
+appRoute.use("/recipient", recipientRoute);
+appRoute.use("/mailing", mailingRoute);
 
 export default appRoute;

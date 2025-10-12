@@ -5,3 +5,5 @@ export { default as contentControllers } from "./contentController";
 export { default as moduleControllers } from "./moduleController";
 export { default as sectionControllers } from "./sectionController";
 export { default as appointmentControllers } from "./appointmentController";
+export { default as recipientControllers } from "./recipientController";
+export { default as mialingControllers } from "./mailingController";

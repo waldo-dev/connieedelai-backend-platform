@@ -28,6 +28,7 @@
     "passport": "^0.4.1",
     "passport-custom": "^1.1.1",
     "pg": "^8.11.4",
+    "resend": "^6.1.2",
     "sequelize-cli": "^6.6.2",
     "sequelize-views-support": "^1.2.2",
     "typescript": "^5.4.3",

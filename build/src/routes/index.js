@@ -11,6 +11,8 @@ const contentRoute_1 = __importDefault(require("./contentRoute"));
 const moduleRoute_1 = __importDefault(require("./moduleRoute"));
 const sectionRoute_1 = __importDefault(require("./sectionRoute"));
 const appointmentRoute_1 = __importDefault(require("./appointmentRoute"));
+const recipientRoute_1 = __importDefault(require("./recipientRoute"));
+const mailingRoute_1 = __importDefault(require("./mailingRoute"));
 const appRoute = express_1.default.Router();
 appRoute.use("/auth", authRoute_1.default);
 appRoute.use("/user", userRoute_1.default);
@@ -19,5 +21,7 @@ appRoute.use("/content", contentRoute_1.default);
 appRoute.use("/module", moduleRoute_1.default);
 appRoute.use("/section", sectionRoute_1.default);
 appRoute.use("/appointment", appointmentRoute_1.default);
+appRoute.use("/recipient", recipientRoute_1.default);
+appRoute.use("/mailing", mailingRoute_1.default);
 exports.default = appRoute;
 //# sourceMappingURL=index.js.map
