@@ -15,7 +15,7 @@ const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, f
     const { data, error } = yield resend.emails.send({
         from: "Connie 💛 <onboarding@resend.dev>",
         to: [email],
-        subject: "¡Bienvenida a Un Día a la Vez 🌿!",
+        subject: "¡Bienvenida al newsletter de Un Día a la Vez 🌿!",
         html: `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 0;">
         <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 10px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
@@ -112,8 +112,39 @@ const send_select_plan = (plan) => __awaiter(void 0, void 0, void 0, function* (
     // });
     return "hola";
 });
+const send_mass_email = (subject, message, recipients) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("🚀 ~ send_mass_email ~ subject:", subject);
+    console.log("🚀 ~ send_mass_email ~ message:", message);
+    console.log("🚀 ~ send_mass_email ~ recipients:", recipients);
+    if (!recipients || recipients.length === 0) {
+        throw new Error("Debe incluir al menos un destinatario");
+    }
+    const htmlContent = `
+    <div style="font-family: Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 0;">
+      <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 10px; padding: 40px;">
+        <h2 style="color: #0050ac;">${subject}</h2>
+        <div style="font-size: 16px; color: #333; line-height: 1.6;">
+          ${message.replace(/\n/g, "<br/>")}
+        </div>
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+          <p style="font-size: 14px; color: #888;">💛 Enviado por el equipo de <strong>Un Día a la Vez</strong></p>
+        </div>
+      </div>
+    </div>
+  `;
+    const { data, error } = yield resend.emails.send({
+        from: "Connie 💛 <onboarding@resend.dev>",
+        to: recipients,
+        subject,
+        html: htmlContent,
+    });
+    if (error)
+        throw new Error(error.message);
+    return data;
+});
 exports.default = {
     send_confirm_subscription,
-    send_select_plan
+    send_select_plan,
+    send_mass_email
 };
 //# sourceMappingURL=mailingService.js.map

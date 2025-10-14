@@ -18,6 +18,24 @@ const send_select_plan = async (
   }
 };
 
+const send_mass_email = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {subject, message, recipients} = req.body;
+    const newRecipient = await mailingService.send_mass_email(subject, message, recipients);
+    return res.status(200).json(newRecipient);
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(404)
+      .json({ error: err || "No se pudo agregar el correo" });
+  }
+};
+
 export default {
   send_select_plan,
+  send_mass_email
 };

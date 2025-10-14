@@ -7,5 +7,6 @@ const express_1 = __importDefault(require("express"));
 const mailingController_1 = __importDefault(require("../controllers/mailingController"));
 const mailingRoute = express_1.default.Router();
 mailingRoute.route("/select-plan").post(mailingController_1.default.send_select_plan);
+mailingRoute.route("/send-mass-email").post(mailingController_1.default.send_mass_email);
 exports.default = mailingRoute;
 //# sourceMappingURL=mailingRoute.js.map
