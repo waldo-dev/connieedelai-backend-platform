@@ -17,7 +17,7 @@ const userRoute = express.Router();
 userRoute
   .route("/")
   .get(isAuthorized, userControllers.get_user_all)
-  .post(isAuthorized, userControllers.post_user);
+  .post( userControllers.post_user);
 
 userRoute
   .route("/:id")
