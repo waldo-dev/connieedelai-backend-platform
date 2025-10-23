@@ -12,6 +12,7 @@ interface IUser {
 	password: string;
 	active: boolean;
 	role: string;
+	plan_type?: string;
 	createdAt: Date | string;
 	updatedAt?: Date | string;
 }
@@ -24,6 +25,7 @@ interface IUserDB extends Model {
 	password: string;
 	active: boolean;
 	role: string;
+	plan_type?: string;
 	createdAt: Date | string;
 	updatedAt?: Date | string;
 }
@@ -39,6 +41,7 @@ const User = connection.define<IUserDB>(
 		active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 		role: { type: DataTypes.STRING, allowNull: false },
 		password: { type: DataTypes.STRING, allowNull: false },
+		plan_type: { type: DataTypes.STRING, allowNull: true },
 	},
 	{
 		modelName: modelName,

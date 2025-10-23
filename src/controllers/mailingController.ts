@@ -35,7 +35,40 @@ const send_mass_email = async (
   }
 };
 
+const send_welcome_platform = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {userData} = req.body;
+    const newRecipient = await mailingService.send_welcome_platform(userData);
+    return res.status(200).json(newRecipient);
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(404)
+      .json({ error: err || "No se pudo enviar el correo" });
+  }
+};
+
+const send_admin_new_subscription = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {userData} = req.body;
+    const newRecipient = await mailingService.send_admin_new_subscription(userData);
+    return res.status(200).json(newRecipient);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 export default {
   send_select_plan,
-  send_mass_email
+  send_mass_email,
+  send_welcome_platform,
+  send_admin_new_subscription
 };
