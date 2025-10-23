@@ -2,9 +2,13 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Email remitente configurado en Resend (debe estar verificado)
+const FROM_EMAIL = process.env.FROM_EMAIL || "Connie 💛 <noreply@connieedelai.com>";
+const FROM_EMAIL_NOTIFICATIONS = process.env.FROM_EMAIL_NOTIFICATIONS || "Notificaciones Un Día a la Vez 🔔 <notificaciones@connieedelai.com>";
+
 const send_confirm_subscription = async (email: string) => {
   const { data, error } = await resend.emails.send({
-    from: "Connie 💛 <onboarding@resend.dev>",
+    from: FROM_EMAIL,
     to: [email],
     subject: "¡Bienvenida al newsletter de Un Día a la Vez 🌿!",
     html: `
@@ -29,7 +33,7 @@ const send_confirm_subscription = async (email: string) => {
             <li>✨ <strong>Guías y recursos</strong> que te ayudarán a dar pasos firmes hacia tu bienestar.</li>
             <li>✨ <strong>Contenido cercano, motivacional y muy personal</strong>, desde mi experiencia como coach, entrenadora, chef, y mujer en constante evolución (¡muchas perspectivas, estoy segura que tú también! 💪🏻).</li>
             <li>✨ <strong>Información anticipada</strong> de programas y materiales especiales de la plataforma de entrenamiento y nutrición <strong>"Un día a la vez"</strong>.</li>
-            <li>✨ <strong>Palabras de aliento</strong> cuando más lo necesites — porque a veces solo necesitamos que alguien nos diga: <em>“Vas bien, tú dale no más.”</em></li>
+            <li>✨ <strong>Palabras de aliento</strong> cuando más lo necesites — porque a veces solo necesitamos que alguien nos diga: <em>"Vas bien, tú dale no más."</em></li>
           </ul>
 
           <p style="font-size: 16px; color: #333; line-height: 1.6;">
@@ -44,7 +48,7 @@ const send_confirm_subscription = async (email: string) => {
           <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
             <p style="font-size: 16px; color: #0050ac; font-weight: bold; margin-bottom: 4px;">Tu coach y compañera de camino,</p>
             <p style="font-size: 16px; color: #333; margin: 0;">Connie 🌿</p>
-            <p style="font-size: 14px; color: #888; margin-top: 4px;">Creadora de la plataforma <strong>“Un Día a la Vez”</strong></p>
+            <p style="font-size: 14px; color: #888; margin-top: 4px;">Creadora de la plataforma <strong>"Un Día a la Vez"</strong></p>
           </div>
         </div>
 
@@ -54,13 +58,19 @@ const send_confirm_subscription = async (email: string) => {
       </div>
     `,
   });
+
+  if (error) {
+    console.error("❌ Error enviando correo de confirmación:", error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Correo de confirmación enviado a:", email);
   return data;
 };
 
 const send_select_plan = async (plan: any) => {
-  console.log("🚀 ~ send_select_plan ~ plan:", plan)
   // const { data, error } = await resend.emails.send({
-  //   from: "Connie 💛 <onboarding@resend.dev>",
+  //   from: FROM_EMAIL,
   //   to: [email],
   //   subject: "¡Bienvenida a Un Día a la Vez 🌿!",
   //   html: `
@@ -114,9 +124,6 @@ const send_select_plan = async (plan: any) => {
 }
 
 const send_mass_email = async (subject: string, message: string, recipients: string[]) => {
-  console.log("🚀 ~ send_mass_email ~ subject:", subject)
-  console.log("🚀 ~ send_mass_email ~ message:", message)
-  console.log("🚀 ~ send_mass_email ~ recipients:", recipients)
   if (!recipients || recipients.length === 0) {
     throw new Error("Debe incluir al menos un destinatario");
   }
@@ -136,7 +143,7 @@ const send_mass_email = async (subject: string, message: string, recipients: str
   `;
 
   const { data, error } = await resend.emails.send({
-    from: "Connie 💛 <onboarding@resend.dev>",
+    from: FROM_EMAIL,
     to: recipients,
     subject,
     html: htmlContent,
@@ -147,9 +154,8 @@ const send_mass_email = async (subject: string, message: string, recipients: str
 };
 
 const send_welcome_platform = async (userData: { email: string; name: string; plan: string }) => {
-  console.log("🚀 ~ send_welcome_platform ~ userData:", userData)
   const { data, error } = await resend.emails.send({
-    from: "Connie 💛 <onboarding@resend.dev>",
+    from: FROM_EMAIL,
     to: [userData.email],
     subject: "¡Bienvenida a la plataforma Un Día a la Vez! 🌟",
     html: `
@@ -215,7 +221,12 @@ const send_welcome_platform = async (userData: { email: string; name: string; pl
     `,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("❌ Error enviando correo de bienvenida a:", userData.email, error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Correo de bienvenida enviado a:", userData.email);
   return data;
 };
 
@@ -228,11 +239,10 @@ const send_admin_new_subscription = async (userData: {
   registrationDate?: string;
   selectedPlan?: any;
 }) => {
-  console.log("🚀 ~ send_admin_new_subscription ~ userData:", userData)
   const adminEmail = process.env.ADMIN_EMAIL || "waldojavier.vo@gmail.com";
   
   const { data, error } = await resend.emails.send({
-    from: "Notificaciones Un Día a la Vez 🔔 <onboarding@resend.dev>",
+    from: FROM_EMAIL_NOTIFICATIONS,
     to: [adminEmail],
     subject: `🎉 Nueva suscripción en la plataforma - ${userData.name}`,
     html: `
@@ -327,7 +337,12 @@ const send_admin_new_subscription = async (userData: {
     `,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("❌ Error enviando notificación al admin:", error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Notificación de nueva suscripción enviada al admin");
   return data;
 };
 

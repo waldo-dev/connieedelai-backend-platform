@@ -44,11 +44,11 @@ const send_welcome_platform = async (
     const userData = req.body;
     const newRecipient = await mailingService.send_welcome_platform(userData);
     return res.status(200).json(newRecipient);
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error("Error en send_welcome_platform:", err);
     return res
-      .status(404)
-      .json({ error: err || "No se pudo enviar el correo" });
+      .status(500)
+      .json({ error: err?.message || "No se pudo enviar el correo de bienvenida" });
   }
 };
 
@@ -63,6 +63,9 @@ const send_admin_new_subscription = async (
     return res.status(200).json(newRecipient);
   } catch (err) {
     console.error(err);
+    return res
+      .status(500)
+      .json({ error: err || "No se pudo enviar la notificación al admin" });
   }
 }
 

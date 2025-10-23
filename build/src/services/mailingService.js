@@ -11,9 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const resend_1 = require("resend");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+// Email remitente configurado en Resend (debe estar verificado)
+const FROM_EMAIL = process.env.FROM_EMAIL || "Connie 💛 <noreply@connieedelai.com>";
+const FROM_EMAIL_NOTIFICATIONS = process.env.FROM_EMAIL_NOTIFICATIONS || "Notificaciones Un Día a la Vez 🔔 <notificaciones@connieedelai.com>";
 const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, function* () {
     const { data, error } = yield resend.emails.send({
-        from: "Connie 💛 <onboarding@resend.dev>",
+        from: FROM_EMAIL,
         to: [email],
         subject: "¡Bienvenida al newsletter de Un Día a la Vez 🌿!",
         html: `
@@ -66,9 +69,8 @@ const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, f
     return data;
 });
 const send_select_plan = (plan) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("🚀 ~ send_select_plan ~ plan:", plan);
     // const { data, error } = await resend.emails.send({
-    //   from: "Connie 💛 <onboarding@resend.dev>",
+    //   from: FROM_EMAIL,
     //   to: [email],
     //   subject: "¡Bienvenida a Un Día a la Vez 🌿!",
     //   html: `
@@ -113,9 +115,6 @@ const send_select_plan = (plan) => __awaiter(void 0, void 0, void 0, function* (
     return "hola";
 });
 const send_mass_email = (subject, message, recipients) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("🚀 ~ send_mass_email ~ subject:", subject);
-    console.log("🚀 ~ send_mass_email ~ message:", message);
-    console.log("🚀 ~ send_mass_email ~ recipients:", recipients);
     if (!recipients || recipients.length === 0) {
         throw new Error("Debe incluir al menos un destinatario");
     }
@@ -133,7 +132,7 @@ const send_mass_email = (subject, message, recipients) => __awaiter(void 0, void
     </div>
   `;
     const { data, error } = yield resend.emails.send({
-        from: "Connie 💛 <onboarding@resend.dev>",
+        from: FROM_EMAIL,
         to: recipients,
         subject,
         html: htmlContent,
@@ -143,9 +142,8 @@ const send_mass_email = (subject, message, recipients) => __awaiter(void 0, void
     return data;
 });
 const send_welcome_platform = (userData) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("🚀 ~ send_welcome_platform ~ userData:", userData);
     const { data, error } = yield resend.emails.send({
-        from: "Connie 💛 <onboarding@resend.dev>",
+        from: FROM_EMAIL,
         to: [userData.email],
         subject: "¡Bienvenida a la plataforma Un Día a la Vez! 🌟",
         html: `
@@ -215,10 +213,9 @@ const send_welcome_platform = (userData) => __awaiter(void 0, void 0, void 0, fu
     return data;
 });
 const send_admin_new_subscription = (userData) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("🚀 ~ send_admin_new_subscription ~ userData:", userData);
     const adminEmail = process.env.ADMIN_EMAIL || "waldojavier.vo@gmail.com";
     const { data, error } = yield resend.emails.send({
-        from: "Notificaciones Un Día a la Vez 🔔 <onboarding@resend.dev>",
+        from: FROM_EMAIL_NOTIFICATIONS,
         to: [adminEmail],
         subject: `🎉 Nueva suscripción en la plataforma - ${userData.name}`,
         html: `
@@ -268,7 +265,7 @@ const send_admin_new_subscription = (userData) => __awaiter(void 0, void 0, void
                   <strong style="color: #0050ac; font-size: 14px;">💎 Plan seleccionado:</strong>
                 </td>
                 <td style="padding: 10px 0; border-bottom: 1px solid #e9ecef; text-align: right;">
-                  <span style="color: #333; font-size: 15px; font-weight: bold;">${userData.plan}</span>
+                  <span style="color: #333; font-size: 15px; font-weight: bold;">${userData.selectedPlan.nombre} - ${userData.plan_type}</span>
                 </td>
               </tr>
               <tr>
@@ -293,9 +290,9 @@ const send_admin_new_subscription = (userData) => __awaiter(void 0, void 0, void
           </p>
 
           <div style="text-align: center; margin: 35px 0;">
-            <a href="${process.env.ADMIN_DASHBOARD_URL || 'https://undialavez.com/admin'}" 
+            <a href="${process.env.ADMIN_DASHBOARD_URL || 'https://app.connieedelai.com/administration/users'}" 
                style="background-color: #0050ac; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-size: 15px; font-weight: bold; display: inline-block;">
-              Ver en el panel de administración
+              Ver en plataforma
             </a>
           </div>
 
