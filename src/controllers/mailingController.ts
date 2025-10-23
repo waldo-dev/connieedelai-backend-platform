@@ -41,7 +41,7 @@ const send_welcome_platform = async (
   next: NextFunction
 ) => {
   try {
-    const {userData} = req.body;
+    const userData = req.body;
     const newRecipient = await mailingService.send_welcome_platform(userData);
     return res.status(200).json(newRecipient);
   } catch (err) {
@@ -58,7 +58,7 @@ const send_admin_new_subscription = async (
   next: NextFunction
 ) => {
   try {
-    const {userData} = req.body;
+    const userData = req.body;
     const newRecipient = await mailingService.send_admin_new_subscription(userData);
     return res.status(200).json(newRecipient);
   } catch (err) {

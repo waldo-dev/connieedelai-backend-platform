@@ -147,6 +147,7 @@ const send_mass_email = async (subject: string, message: string, recipients: str
 };
 
 const send_welcome_platform = async (userData: { email: string; name: string; plan: string }) => {
+  console.log("🚀 ~ send_welcome_platform ~ userData:", userData)
   const { data, error } = await resend.emails.send({
     from: "Connie 💛 <onboarding@resend.dev>",
     to: [userData.email],
@@ -223,8 +224,11 @@ const send_admin_new_subscription = async (userData: {
   name: string; 
   plan: string; 
   phone?: string;
+  plan_type?: string;
   registrationDate?: string;
+  selectedPlan?: any;
 }) => {
+  console.log("🚀 ~ send_admin_new_subscription ~ userData:", userData)
   const adminEmail = process.env.ADMIN_EMAIL || "waldojavier.vo@gmail.com";
   
   const { data, error } = await resend.emails.send({
@@ -278,7 +282,7 @@ const send_admin_new_subscription = async (userData: {
                   <strong style="color: #0050ac; font-size: 14px;">💎 Plan seleccionado:</strong>
                 </td>
                 <td style="padding: 10px 0; border-bottom: 1px solid #e9ecef; text-align: right;">
-                  <span style="color: #333; font-size: 15px; font-weight: bold;">${userData.plan}</span>
+                  <span style="color: #333; font-size: 15px; font-weight: bold;">${userData.selectedPlan.nombre} - ${userData.plan_type}</span>
                 </td>
               </tr>
               <tr>
@@ -303,9 +307,9 @@ const send_admin_new_subscription = async (userData: {
           </p>
 
           <div style="text-align: center; margin: 35px 0;">
-            <a href="${process.env.ADMIN_DASHBOARD_URL || 'https://undialavez.com/admin'}" 
+            <a href="${process.env.ADMIN_DASHBOARD_URL || 'https://app.connieedelai.com/administration/users'}" 
                style="background-color: #0050ac; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-size: 15px; font-weight: bold; display: inline-block;">
-              Ver en el panel de administración
+              Ver en plataforma
             </a>
           </div>
 

@@ -39,8 +39,33 @@ const send_mass_email = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             .json({ error: err || "No se pudo agregar el correo" });
     }
 });
+const send_welcome_platform = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userData = req.body;
+        const newRecipient = yield mailingService_1.default.send_welcome_platform(userData);
+        return res.status(200).json(newRecipient);
+    }
+    catch (err) {
+        console.error(err);
+        return res
+            .status(404)
+            .json({ error: err || "No se pudo enviar el correo" });
+    }
+});
+const send_admin_new_subscription = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userData = req.body;
+        const newRecipient = yield mailingService_1.default.send_admin_new_subscription(userData);
+        return res.status(200).json(newRecipient);
+    }
+    catch (err) {
+        console.error(err);
+    }
+});
 exports.default = {
     send_select_plan,
-    send_mass_email
+    send_mass_email,
+    send_welcome_platform,
+    send_admin_new_subscription
 };
 //# sourceMappingURL=mailingController.js.map

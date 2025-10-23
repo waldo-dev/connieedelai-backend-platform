@@ -12,6 +12,7 @@ const User = connection.define(modelName, {
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     role: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
+    plan_type: { type: DataTypes.STRING, allowNull: true },
 }, {
     modelName: modelName,
     tableName: modelName,
