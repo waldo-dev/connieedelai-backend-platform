@@ -46,10 +46,10 @@ const send_welcome_platform = (req, res, next) => __awaiter(void 0, void 0, void
         return res.status(200).json(newRecipient);
     }
     catch (err) {
-        console.error(err);
+        console.error("Error en send_welcome_platform:", err);
         return res
-            .status(404)
-            .json({ error: err || "No se pudo enviar el correo" });
+            .status(500)
+            .json({ error: (err === null || err === void 0 ? void 0 : err.message) || "No se pudo enviar el correo de bienvenida" });
     }
 });
 const send_admin_new_subscription = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -60,6 +60,9 @@ const send_admin_new_subscription = (req, res, next) => __awaiter(void 0, void 0
     }
     catch (err) {
         console.error(err);
+        return res
+            .status(500)
+            .json({ error: err || "No se pudo enviar la notificación al admin" });
     }
 });
 exports.default = {

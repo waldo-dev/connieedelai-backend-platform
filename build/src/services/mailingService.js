@@ -41,7 +41,7 @@ const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, f
             <li>✨ <strong>Guías y recursos</strong> que te ayudarán a dar pasos firmes hacia tu bienestar.</li>
             <li>✨ <strong>Contenido cercano, motivacional y muy personal</strong>, desde mi experiencia como coach, entrenadora, chef, y mujer en constante evolución (¡muchas perspectivas, estoy segura que tú también! 💪🏻).</li>
             <li>✨ <strong>Información anticipada</strong> de programas y materiales especiales de la plataforma de entrenamiento y nutrición <strong>"Un día a la vez"</strong>.</li>
-            <li>✨ <strong>Palabras de aliento</strong> cuando más lo necesites — porque a veces solo necesitamos que alguien nos diga: <em>“Vas bien, tú dale no más.”</em></li>
+            <li>✨ <strong>Palabras de aliento</strong> cuando más lo necesites — porque a veces solo necesitamos que alguien nos diga: <em>"Vas bien, tú dale no más."</em></li>
           </ul>
 
           <p style="font-size: 16px; color: #333; line-height: 1.6;">
@@ -56,7 +56,7 @@ const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, f
           <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
             <p style="font-size: 16px; color: #0050ac; font-weight: bold; margin-bottom: 4px;">Tu coach y compañera de camino,</p>
             <p style="font-size: 16px; color: #333; margin: 0;">Connie 🌿</p>
-            <p style="font-size: 14px; color: #888; margin-top: 4px;">Creadora de la plataforma <strong>“Un Día a la Vez”</strong></p>
+            <p style="font-size: 14px; color: #888; margin-top: 4px;">Creadora de la plataforma <strong>"Un Día a la Vez"</strong></p>
           </div>
         </div>
 
@@ -66,6 +66,11 @@ const send_confirm_subscription = (email) => __awaiter(void 0, void 0, void 0, f
       </div>
     `,
     });
+    if (error) {
+        console.error("❌ Error enviando correo de confirmación:", error);
+        throw new Error(error.message);
+    }
+    console.log("✅ Correo de confirmación enviado a:", email);
     return data;
 });
 const send_select_plan = (plan) => __awaiter(void 0, void 0, void 0, function* () {
@@ -208,8 +213,11 @@ const send_welcome_platform = (userData) => __awaiter(void 0, void 0, void 0, fu
       </div>
     `,
     });
-    if (error)
+    if (error) {
+        console.error("❌ Error enviando correo de bienvenida a:", userData.email, error);
         throw new Error(error.message);
+    }
+    console.log("✅ Correo de bienvenida enviado a:", userData.email);
     return data;
 });
 const send_admin_new_subscription = (userData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -309,8 +317,11 @@ const send_admin_new_subscription = (userData) => __awaiter(void 0, void 0, void
       </div>
     `,
     });
-    if (error)
+    if (error) {
+        console.error("❌ Error enviando notificación al admin:", error);
         throw new Error(error.message);
+    }
+    console.log("✅ Notificación de nueva suscripción enviada al admin");
     return data;
 });
 exports.default = {
