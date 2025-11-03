@@ -9,6 +9,9 @@ import app from "./../app";
 var debug = require("debug")("user-admin-repo:server");
 var http = require("http");
 
+// Importar y configurar el cron job de notificaciones de suscripciones
+import { startSubscriptionNotificationsCron } from "../src/jobs/subscriptionNotificationsJob";
+
 /**
  * Get port from environment and store in Express.
  */
@@ -28,6 +31,9 @@ var server = http.createServer(app);
 
 server.listen(port, () => {
 	console.log(`Server running like ${process.env.NODE_ENV} on port: ${port}`);
+	
+	// Iniciar el cron job de notificaciones de suscripciones
+	startSubscriptionNotificationsCron();
 });
 server.on("error", onError);
 server.on("listening", onListening);

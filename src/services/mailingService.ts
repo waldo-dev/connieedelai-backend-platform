@@ -346,10 +346,142 @@ const send_admin_new_subscription = async (userData: {
   return data;
 };
 
+const send_expiring_soon = async (userData: { email: string; name: string; expirationDate: Date | string }) => {
+  // Formatear la fecha en español (ej: "Martes 04 de noviembre del 2025")
+  const expirationDate = typeof userData.expirationDate === 'string' 
+    ? new Date(userData.expirationDate) 
+    : userData.expirationDate;
+  
+  const formattedDate = expirationDate.toLocaleDateString('es-CL', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const platformUrl = process.env.PLATFORM_URL || 'https://app.connieedelai.com';
+  const loginUrl = `${platformUrl}/login`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [userData.email],
+    subject: 'Tu membresía de bienestar "Un día a la vez" caducará pronto',
+    html: `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 0;">
+        <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 10px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <h1 style="color: #0050ac; font-size: 28px; margin-bottom: 20px; text-align: center;">💛 ¡Hola, ${userData.name}!</h1>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 20px;">
+            📣 ¡Tu membresía <strong>"Un día a la vez"</strong> en www.connieedelai.com finalizará pronto!
+          </p>
+
+          <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;">
+            <p style="font-size: 16px; color: #333; margin: 0; line-height: 1.6;">
+              ⚠️ Tu acceso a la membresía se detendrá el día <strong>${formattedDate}</strong>.
+            </p>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 25px;">
+            💫 Si deseas continuar accediendo a contenido exclusivo para miembros y seguir avanzando en tu objetivo, renueva tu membresía.
+          </p>
+
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${loginUrl}" 
+               style="background-color: #0050ac; color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: bold; display: inline-block;">
+              ⚡ Renovar mi membresía
+            </a>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-top: 25px;">
+            Con cariño,<br/>
+            <strong>Tu coach amiga Connie</strong> 💛
+          </p>
+
+          <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <p style="font-size: 14px; color: #888; margin: 0;">
+              💛 <strong>Un Día a la Vez</strong> - Tu plataforma de bienestar
+            </p>
+          </div>
+        </div>
+
+        <p style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+          © ${new Date().getFullYear()} Un Día a la Vez | Este mensaje fue enviado con cariño 💛
+        </p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    console.error("❌ Error enviando correo de membresía por vencer a:", userData.email, error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Correo de membresía por vencer enviado a:", userData.email);
+  return data;
+};
+
+const send_expired = async (userData: { email: string; name: string }) => {
+  const platformUrl = process.env.PLATFORM_URL || 'https://app.connieedelai.com';
+  const loginUrl = `${platformUrl}/login`;
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [userData.email],
+    subject: 'Tu membresía de bienestar en la plataforma "Un día a la vez" de www.connieedelai.com ha expirado 🚩',
+    html: `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 0;">
+        <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 10px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <h1 style="color: #0050ac; font-size: 28px; margin-bottom: 20px; text-align: center;">💛 Hola, hola ${userData.name}</h1>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 20px;">
+            ¡Oh no! Tu acceso a la plataforma <strong>"Un día a la vez"</strong> ha finalizado. 💔
+          </p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 25px;">
+            🌱 Si deseas continuar accediendo a contenido exclusivo para miembros y seguir avanzando en tu objetivo de bienestar, renueva tu membresía 💪🏻
+          </p>
+
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${loginUrl}" 
+               style="background-color: #0050ac; color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: bold; display: inline-block;">
+              ⚡ Renovar mi membresía ahora
+            </a>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-top: 25px;">
+            ¡Nos vemos dentro!<br/>
+            Con cariño, tu coach amiga... 💛
+          </p>
+
+          <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <p style="font-size: 14px; color: #888; margin: 0;">
+              💛 <strong>Un Día a la Vez</strong> - Tu plataforma de bienestar
+            </p>
+          </div>
+        </div>
+
+        <p style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+          © ${new Date().getFullYear()} Un Día a la Vez | Este mensaje fue enviado con cariño 💛
+        </p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    console.error("❌ Error enviando correo de membresía expirada a:", userData.email, error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Correo de membresía expirada enviado a:", userData.email);
+  return data;
+};
+
 export default {
   send_confirm_subscription,
   send_select_plan,
   send_mass_email,
   send_welcome_platform,
-  send_admin_new_subscription
+  send_admin_new_subscription,
+  send_expiring_soon,
+  send_expired
 };
