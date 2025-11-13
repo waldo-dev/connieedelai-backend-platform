@@ -153,7 +153,7 @@ const send_mass_email = async (subject: string, message: string, recipients: str
   return data;
 };
 
-const send_welcome_platform = async (userData: { email: string; name: string; plan: string }) => {
+const send_welcome_platform_ore = async (userData: { email: string; name: string; plan: string }) => {
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: [userData.email],
@@ -230,6 +230,92 @@ const send_welcome_platform = async (userData: { email: string; name: string; pl
   return data;
 };
 
+const send_welcome_platform_plata = async (userData: { email: string; name: string; plan: string }) => {
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [userData.email],
+    subject: "¡Bienvenida al Plan Plata de Un Día a la Vez! ✨",
+    html: `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f0f4f8; padding: 40px 0;">
+        <div style="max-width: 600px; background-color: #ffffff; margin: auto; border-radius: 12px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <h1 style="color: #0070c9; font-size: 28px; margin-bottom: 20px; text-align: center;">💎 ¡Hola ${userData.name}!</h1>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 20px;">
+            ¡Qué alegría tenerte en el <strong>Plan Plata</strong> de la plataforma <strong>"Un Día a la Vez"</strong> 🌿
+          </p>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 20px;">
+            Hoy das un paso precioso por ti. Este espacio está hecho para acompañarte con cariño, motivación y herramientas prácticas para avanzar <strong>un día a la vez</strong>.
+          </p>
+
+          <div style="background-color: #e8f4ff; border-left: 4px solid #0070c9; padding: 20px; margin: 25px 0; border-radius: 8px;">
+            <p style="font-size: 16px; color: #333; margin: 0; line-height: 1.6;">
+              <strong>✨ Tu plan seleccionado:</strong> ${userData.plan}
+            </p>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 15px;">
+            Con el <strong>Plan Plata</strong> vas a disfrutar de:
+          </p>
+
+          <ul style="font-size: 16px; color: #333; line-height: 1.8; padding-left: 20px; margin-bottom: 25px;">
+            <li>🏋️‍♀️ Entrenamientos guiados ideales para mantener tu constancia y energía.</li>
+          </ul>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 20px;">
+            Recuerda: no se trata de hacerlo perfecto, sino de caminar con firmeza y amor propio. Estoy contigo en cada paso.
+          </p>
+
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${process.env.PLATFORM_URL || 'https://app.connieedelai.com'}"
+               style="background-color: #0070c9; color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-size: 16px; font-weight: bold; display: inline-block;">
+              Ir a mi plataforma 🚀
+            </a>
+          </div>
+
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">
+            Gracias por confiar en mí. <strong>Hoy comienza una etapa hermosa para ti</strong>.<br/>
+            ¡Nos vemos dentro! 💛
+          </p>
+
+          <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <p style="font-size: 16px; color: #0070c9; font-weight: bold; margin-bottom: 4px;">Con cariño infinito,</p>
+            <p style="font-size: 16px; color: #333; margin: 0;">Connie 🌿</p>
+            <p style="font-size: 14px; color: #888; margin-top: 4px;">Tu coach y compañera en este camino</p>
+          </div>
+        </div>
+
+        <p style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+          © ${new Date().getFullYear()} Un Día a la Vez | Este mensaje fue enviado con cariño 💛
+        </p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    console.error("❌ Error enviando correo de bienvenida Plan Plata a:", userData.email, error);
+    throw new Error(error.message);
+  }
+  
+  console.log("✅ Correo de bienvenida Plan Plata enviado a:", userData.email);
+  return data;
+};
+
+const send_welcome_platform = async (userData: { email: string; name: string; plan: string }) => {
+  const planName = (userData.plan || "").toLowerCase();
+
+  if (planName.includes("plata")) {
+    return send_welcome_platform_plata(userData);
+  }
+
+  if (planName.includes("oro")) {
+    return send_welcome_platform_ore(userData);
+  }
+
+  // Plantilla por defecto
+  return send_welcome_platform_ore(userData);
+};
+
 const send_admin_new_subscription = async (userData: { 
   email: string; 
   name: string; 
@@ -239,7 +325,7 @@ const send_admin_new_subscription = async (userData: {
   registrationDate?: string;
   selectedPlan?: any;
 }) => {
-  const adminEmail = process.env.ADMIN_EMAIL || "waldojavier.vo@gmail.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "connie.edelai@gmail.com";
   
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL_NOTIFICATIONS,
@@ -480,7 +566,8 @@ export default {
   send_confirm_subscription,
   send_select_plan,
   send_mass_email,
-  send_welcome_platform,
+  send_welcome_platform_ore,
+  send_welcome_platform_plata,
   send_admin_new_subscription,
   send_expiring_soon,
   send_expired

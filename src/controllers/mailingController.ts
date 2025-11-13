@@ -36,14 +36,31 @@ const send_mass_email = async (
   }
 };
 
-const send_welcome_platform = async (
+const send_welcome_platform_ore = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const userData = req.body;
-    const newRecipient = await mailingService.send_welcome_platform(userData);
+    const newRecipient = await mailingService.send_welcome_platform_ore(userData);
+    return res.status(200).json(newRecipient);
+  } catch (err: any) {
+    console.error("Error en send_welcome_platform:", err);
+    return res
+      .status(500)
+      .json({ error: err?.message || "No se pudo enviar el correo de bienvenida" });
+  }
+};
+
+const send_welcome_platform_plata = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userData = req.body;
+    const newRecipient = await mailingService.send_welcome_platform_plata(userData);
     return res.status(200).json(newRecipient);
   } catch (err: any) {
     console.error("Error en send_welcome_platform:", err);
@@ -164,7 +181,8 @@ const check_all_subscription_notifications = async (
 export default {
   send_select_plan,
   send_mass_email,
-  send_welcome_platform,
+  send_welcome_platform_ore,
+  send_welcome_platform_plata,
   send_admin_new_subscription,
   send_expiring_soon,
   send_expired,

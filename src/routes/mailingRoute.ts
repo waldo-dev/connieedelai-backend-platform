@@ -5,7 +5,8 @@ const mailingRoute = express.Router();
 
 mailingRoute.route("/select-plan").post(mailingController.send_select_plan);
 mailingRoute.route("/send-mass-email").post(mailingController.send_mass_email);
-mailingRoute.route("/send-welcome-platform").post(mailingController.send_welcome_platform);
+mailingRoute.route("/send-welcome-platform-ore").post(mailingController.send_welcome_platform_ore);
+mailingRoute.route("/send-welcome-platform-plata").post(mailingController.send_welcome_platform_plata);
 mailingRoute.route("/send-admin-new-subscription").post(mailingController.send_admin_new_subscription);
 mailingRoute.route("/send-expiring-soon").post(mailingController.send_expiring_soon);
 mailingRoute.route("/send-expired").post(mailingController.send_expired);

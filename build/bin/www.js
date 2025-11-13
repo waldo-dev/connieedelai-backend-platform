@@ -11,6 +11,8 @@ const app_1 = __importDefault(require("./../app"));
 // var app = require("../app");
 var debug = require("debug")("user-admin-repo:server");
 var http = require("http");
+// Importar y configurar el cron job de notificaciones de suscripciones
+const subscriptionNotificationsJob_1 = require("../src/jobs/subscriptionNotificationsJob");
 /**
  * Get port from environment and store in Express.
  */
@@ -25,6 +27,8 @@ var server = http.createServer(app_1.default);
  */
 server.listen(port, () => {
     console.log(`Server running like ${process.env.NODE_ENV} on port: ${port}`);
+    // Iniciar el cron job de notificaciones de suscripciones
+    (0, subscriptionNotificationsJob_1.startSubscriptionNotificationsCron)();
 });
 server.on("error", onError);
 server.on("listening", onListening);
