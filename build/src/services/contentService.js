@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.get_content_by_section = exports.delete_content_by_id = exports.generate_upload_url = exports.post_content_with_upload = void 0;
+exports.convert_content_to_hls = exports.get_content_by_section = exports.delete_content_by_id = exports.generate_upload_url = exports.post_content_with_upload = void 0;
 const content_1 = require("../models/content");
 const models_1 = require("../models");
 const mime_types_1 = __importDefault(require("mime-types"));
@@ -22,6 +22,7 @@ const uuid_1 = require("uuid");
 const storage_1 = require("@google-cloud/storage");
 const connieedelai_c1edf_466220_3e8259af3da0_json_1 = __importDefault(require("../config/connieedelai-c1edf-466220-3e8259af3da0.json"));
 const content_section_1 = __importDefault(require("../models/content_section"));
+const hlsConversionService_1 = require("./hlsConversionService");
 const storage = new storage_1.Storage({
     projectId: connieedelai_c1edf_466220_3e8259af3da0_json_1.default.project_id,
     credentials: connieedelai_c1edf_466220_3e8259af3da0_json_1.default,
@@ -308,6 +309,49 @@ const get_content_by_section = (req, res, next) => __awaiter(void 0, void 0, voi
     }
 });
 exports.get_content_by_section = get_content_by_section;
+const convert_content_to_hls = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const contentId = parseInt(req.params.id);
+        if (isNaN(contentId)) {
+            return res.status(400).json({ message: "ID inválido" });
+        }
+        // Buscar el contenido
+        const content = yield content_1.Content.findByPk(contentId);
+        if (!content) {
+            return res.status(404).json({ message: "Contenido no encontrado" });
+        }
+        // Verificar que tiene una URL de video
+        if (!content.url) {
+            return res.status(400).json({ message: "El contenido no tiene una URL de video" });
+        }
+        // Verificar si ya es HLS (termina en .m3u8)
+        if (content.url.endsWith(".m3u8")) {
+            return res.status(200).json({
+                message: "El video ya está en formato HLS",
+                url: content.url,
+            });
+        }
+        console.log(`🔄 Iniciando conversión a HLS para contenido ID: ${contentId}`);
+        // Convertir el video a HLS
+        const hlsUrl = yield (0, hlsConversionService_1.convertVideoToHLS)(content.url, contentId);
+        // Actualizar la URL en la base de datos
+        yield content.update({ url: hlsUrl });
+        console.log(`✅ Conversión completada. Nueva URL: ${hlsUrl}`);
+        return res.status(200).json({
+            message: "Video convertido a HLS exitosamente",
+            url: hlsUrl,
+            content: content,
+        });
+    }
+    catch (err) {
+        console.error("Error al convertir video a HLS:", err);
+        return res.status(500).json({
+            message: "Error interno al convertir video a HLS",
+            error: err instanceof Error ? err.message : "Error desconocido",
+        });
+    }
+});
+exports.convert_content_to_hls = convert_content_to_hls;
 exports.default = {
     get_content_by_id,
     put_content_by_id,
@@ -320,6 +364,7 @@ exports.default = {
     get_content_nutrition_by_id,
     post_content_with_upload: exports.post_content_with_upload,
     delete_content_by_id: exports.delete_content_by_id,
-    get_content_by_section: exports.get_content_by_section
+    get_content_by_section: exports.get_content_by_section,
+    convert_content_to_hls: exports.convert_content_to_hls
 };
 //# sourceMappingURL=contentService.js.map

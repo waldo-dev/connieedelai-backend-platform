@@ -49,6 +49,9 @@ const generate_upload_url = (req, res, next) => __awaiter(void 0, void 0, void 0
 const delete_content_by_id = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     return yield contentService_1.default.delete_content_by_id(req, res, next);
 });
+const convert_content_to_hls = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield contentService_1.default.convert_content_to_hls(req, res, next);
+});
 exports.default = {
     get_content_all,
     post_content,
@@ -61,6 +64,7 @@ exports.default = {
     post_content_with_upload,
     delete_content_by_id,
     generate_upload_url,
-    get_content_by_section
+    get_content_by_section,
+    convert_content_to_hls
 };
 //# sourceMappingURL=contentController.js.map

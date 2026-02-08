@@ -53,6 +53,10 @@ const delete_content_by_id = async (req: Request, res: Response, next: NextFunct
   return await contentService.delete_content_by_id(req, res, next);
 };
 
+const convert_content_to_hls = async (req: Request, res: Response, next: NextFunction) => {
+  return await contentService.convert_content_to_hls(req, res, next);
+};
+
 
 export default {
   get_content_all,
@@ -66,5 +70,6 @@ export default {
   post_content_with_upload,
   delete_content_by_id,
   generate_upload_url,
-  get_content_by_section
+  get_content_by_section,
+  convert_content_to_hls
 };

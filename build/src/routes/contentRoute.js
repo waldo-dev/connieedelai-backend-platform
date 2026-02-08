@@ -35,5 +35,7 @@ contentRoute
     .delete(auth_1.isAuthorized, controllers_1.contentControllers.delete_content_by_id);
 contentRoute.route("/section/:id")
     .get(auth_1.isAuthorized, controllers_1.contentControllers.get_content_by_section);
+contentRoute.route("/:id/convert-to-hls")
+    .post(auth_1.isAuthorized, controllers_1.contentControllers.convert_content_to_hls);
 exports.default = contentRoute;
 //# sourceMappingURL=contentRoute.js.map

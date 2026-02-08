@@ -11,6 +11,7 @@ import fs from "fs";
 import { Storage } from "@google-cloud/storage";
 import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
 import ContentSections from "../models/content_section";
+import { convertVideoToHLS } from "./hlsConversionService";
 
 const storage = new Storage({
   projectId: serviceAccountJson.project_id,
@@ -396,6 +397,60 @@ export const get_content_by_section = async (
   }
 };
 
+export const convert_content_to_hls = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const contentId = parseInt(req.params.id);
+    if (isNaN(contentId)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    // Buscar el contenido
+    const content = await Content.findByPk(contentId);
+    if (!content) {
+      return res.status(404).json({ message: "Contenido no encontrado" });
+    }
+
+    // Verificar que tiene una URL de video
+    if (!content.url) {
+      return res.status(400).json({ message: "El contenido no tiene una URL de video" });
+    }
+
+    // Verificar si ya es HLS (termina en .m3u8)
+    if (content.url.endsWith(".m3u8")) {
+      return res.status(200).json({
+        message: "El video ya está en formato HLS",
+        url: content.url,
+      });
+    }
+
+    console.log(`🔄 Iniciando conversión a HLS para contenido ID: ${contentId}`);
+
+    // Convertir el video a HLS
+    const hlsUrl = await convertVideoToHLS(content.url, contentId);
+
+    // Actualizar la URL en la base de datos
+    await content.update({ url: hlsUrl });
+
+    console.log(`✅ Conversión completada. Nueva URL: ${hlsUrl}`);
+
+    return res.status(200).json({
+      message: "Video convertido a HLS exitosamente",
+      url: hlsUrl,
+      content: content,
+    });
+  } catch (err) {
+    console.error("Error al convertir video a HLS:", err);
+    return res.status(500).json({
+      message: "Error interno al convertir video a HLS",
+      error: err instanceof Error ? err.message : "Error desconocido",
+    });
+  }
+};
+
 export default {
   get_content_by_id,
   put_content_by_id,
@@ -408,5 +463,6 @@ export default {
   get_content_nutrition_by_id,
   post_content_with_upload,
   delete_content_by_id,
-  get_content_by_section
+  get_content_by_section,
+  convert_content_to_hls
 };
