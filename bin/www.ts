@@ -11,6 +11,8 @@ var http = require("http");
 
 // Importar y configurar el cron job de notificaciones de suscripciones
 import { startSubscriptionNotificationsCron } from "../src/jobs/subscriptionNotificationsJob";
+// Importar y configurar el cron job de conversión HLS
+import { startHLSConversionCron } from "../src/jobs/hlsConversionJob";
 
 /**
  * Get port from environment and store in Express.
@@ -34,6 +36,9 @@ server.listen(port, () => {
 	
 	// Iniciar el cron job de notificaciones de suscripciones
 	startSubscriptionNotificationsCron();
+	
+	// Iniciar el cron job de conversión HLS
+	startHLSConversionCron();
 });
 server.on("error", onError);
 server.on("listening", onListening);

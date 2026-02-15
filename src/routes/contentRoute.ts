@@ -42,6 +42,9 @@ contentRoute
   contentRoute.route("/section/:id")
   .get(isAuthorized, contentControllers.get_content_by_section)
 
+  contentRoute.route("/convert-all-to-hls")
+  .post( contentControllers.convert_all_to_hls)
+
   contentRoute.route("/:id/convert-to-hls")
   .post(isAuthorized, contentControllers.convert_content_to_hls)
 

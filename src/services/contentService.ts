@@ -12,6 +12,7 @@ import { Storage } from "@google-cloud/storage";
 import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
 import ContentSections from "../models/content_section";
 import { convertVideoToHLS } from "./hlsConversionService";
+import { processHLSConversions } from "./hlsConversionJobService";
 
 const storage = new Storage({
   projectId: serviceAccountJson.project_id,
@@ -419,33 +420,73 @@ export const convert_content_to_hls = async (
       return res.status(400).json({ message: "El contenido no tiene una URL de video" });
     }
 
-    // Verificar si ya es HLS (termina en .m3u8)
-    if (content.url.endsWith(".m3u8")) {
+    // Verificar si ya tiene HLS
+    if (content.hls_url) {
       return res.status(200).json({
-        message: "El video ya está en formato HLS",
-        url: content.url,
+        hls_url: content.hls_url,
+        status: "converted",
       });
     }
 
     console.log(`🔄 Iniciando conversión a HLS para contenido ID: ${contentId}`);
 
-    // Convertir el video a HLS
-    const hlsUrl = await convertVideoToHLS(content.url, contentId);
+    // Actualizar status a "processing"
+    await content.update({ conversion_status: "processing" });
 
-    // Actualizar la URL en la base de datos
-    await content.update({ url: hlsUrl });
+    try {
+      // Convertir el video a HLS
+      const hlsUrl = await convertVideoToHLS(content.url, contentId);
 
-    console.log(`✅ Conversión completada. Nueva URL: ${hlsUrl}`);
+      // Actualizar hls_url y status a "completed"
+      await content.update({
+        hls_url: hlsUrl,
+        conversion_status: "completed",
+      });
 
-    return res.status(200).json({
-      message: "Video convertido a HLS exitosamente",
-      url: hlsUrl,
-      content: content,
-    });
+      console.log(`✅ Conversión completada. HLS URL: ${hlsUrl}`);
+
+      return res.status(200).json({
+        hls_url: hlsUrl,
+        status: "converted",
+      });
+    } catch (conversionError) {
+      // Actualizar status a "failed" en caso de error
+      await content.update({ conversion_status: "failed" });
+      throw conversionError;
+    }
   } catch (err) {
     console.error("Error al convertir video a HLS:", err);
     return res.status(500).json({
       message: "Error interno al convertir video a HLS",
+      error: err instanceof Error ? err.message : "Error desconocido",
+      status: "failed",
+    });
+  }
+};
+
+export const convert_all_to_hls = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log("🔄 Iniciando conversión manual de todos los videos a HLS...");
+
+    // Ejecutar el proceso de conversión
+    const result = await processHLSConversions();
+
+    return res.status(200).json({
+      message: "Proceso de conversión completado",
+      total: result.total,
+      processed: result.processed,
+      successful: result.successful,
+      failed: result.failed,
+      results: result.results,
+    });
+  } catch (err) {
+    console.error("Error al convertir videos a HLS:", err);
+    return res.status(500).json({
+      message: "Error interno al convertir videos a HLS",
       error: err instanceof Error ? err.message : "Error desconocido",
     });
   }
@@ -464,5 +505,6 @@ export default {
   post_content_with_upload,
   delete_content_by_id,
   get_content_by_section,
-  convert_content_to_hls
+  convert_content_to_hls,
+  convert_all_to_hls
 };

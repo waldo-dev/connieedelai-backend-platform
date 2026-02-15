@@ -1,6 +1,9 @@
 # Usa una imagen oficial de Node.js
 FROM node:19-alpine
 
+# Instala ffmpeg (necesario para conversión de videos)
+RUN apk add --no-cache ffmpeg
+
 # Establece el directorio de trabajo
 WORKDIR /app
 

@@ -7,6 +7,40 @@ import { Storage } from "@google-cloud/storage";
 import serviceAccountJson from "../config/connieedelai-c1edf-466220-3e8259af3da0.json";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { execSync } from "child_process";
+
+// Verificar si ffmpeg está instalado
+const checkFFmpeg = (): boolean => {
+  try {
+    if (process.platform === "win32") {
+      execSync("where ffmpeg", { stdio: "ignore" });
+    } else {
+      execSync("which ffmpeg", { stdio: "ignore" });
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Verificar al cargar el módulo
+if (!checkFFmpeg()) {
+  console.error("❌ ERROR: ffmpeg no está instalado o no está en el PATH");
+  if (process.platform === "win32") {
+    console.error("\n📦 Para instalar ffmpeg en Windows:");
+    console.error("   1. Descarga desde: https://ffmpeg.org/download.html");
+    console.error("   2. O usa chocolatey: choco install ffmpeg");
+    console.error("   3. O usa winget: winget install ffmpeg");
+    console.error("\n   Asegúrate de agregar ffmpeg al PATH del sistema");
+    console.error("   Reinicia la terminal después de instalar\n");
+  } else {
+    console.error("\n📦 Para instalar ffmpeg en Ubuntu/Debian:");
+    console.error("   sudo apt update");
+    console.error("   sudo apt install -y ffmpeg");
+    console.error("\n📦 Para instalar ffmpeg en Alpine (Docker):");
+    console.error("   apk add --no-cache ffmpeg\n");
+  }
+}
 
 const storage = new Storage({
   projectId: serviceAccountJson.project_id,
@@ -29,6 +63,10 @@ const adminBucket = admin.storage().bucket();
  * Descarga un video desde una URL (puede ser Firebase Storage o cualquier URL)
  */
 const downloadVideo = async (videoUrl: string, outputPath: string): Promise<void> => {
+  const startTime = Date.now();
+  let downloadedBytes = 0;
+  let totalBytes = 0;
+
   // Si es una URL de Firebase Storage, intentar descargar directamente
   if (videoUrl.includes("storage.googleapis.com")) {
     try {
@@ -40,27 +78,64 @@ const downloadVideo = async (videoUrl: string, outputPath: string): Promise<void
       const [exists] = await file.exists();
       
       if (exists) {
-        // Descargar directamente desde Firebase Storage
+        // Obtener metadata para saber el tamaño
+        const [metadata] = await file.getMetadata();
+        totalBytes = parseInt(String(metadata.size || "0"), 10);
+        console.log(`📊 Tamaño del archivo: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
+        
+        // Descargar directamente desde Firebase Storage con progreso
+        console.log("⬇️ Iniciando descarga desde Firebase Storage...");
         await file.download({ destination: outputPath });
+        
+        const stats = fs.statSync(outputPath);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Descarga completada en ${elapsed}s (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
         return;
       }
     } catch (err) {
-      console.warn("No se pudo descargar desde Firebase Storage, intentando con HTTP:", err);
+      console.warn("⚠️ No se pudo descargar desde Firebase Storage, intentando con HTTP:", err);
     }
   }
 
   // Fallback: descargar usando HTTP
+  console.log("⬇️ Iniciando descarga HTTP...");
   const response = await axios({
     method: "GET",
     url: videoUrl,
     responseType: "stream",
   });
 
+  // Obtener el tamaño total si está disponible
+  totalBytes = parseInt(response.headers["content-length"] || "0", 10);
+  if (totalBytes > 0) {
+    console.log(`📊 Tamaño del archivo: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
+  }
+
   const writer = fs.createWriteStream(outputPath);
+
+  // Monitorear progreso de descarga
+  response.data.on("data", (chunk: Buffer) => {
+    downloadedBytes += chunk.length;
+    if (totalBytes > 0) {
+      const percent = ((downloadedBytes / totalBytes) * 100).toFixed(1);
+      const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(2);
+      const totalMB = (totalBytes / 1024 / 1024).toFixed(2);
+      process.stdout.write(`\r⬇️ Descargando: ${percent}% (${downloadedMB} MB / ${totalMB} MB)`);
+    } else {
+      const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(2);
+      process.stdout.write(`\r⬇️ Descargando: ${downloadedMB} MB...`);
+    }
+  });
+
   response.data.pipe(writer);
 
   return new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
+    writer.on("finish", () => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      const stats = fs.statSync(outputPath);
+      console.log(`\n✅ Descarga completada en ${elapsed}s (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+      resolve();
+    });
     writer.on("error", reject);
   });
 };
@@ -74,6 +149,12 @@ const convertToHLS = (
   outputFileName: string
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
+    // Verificar ffmpeg antes de usar
+    if (!checkFFmpeg()) {
+      reject(new Error("ffmpeg no está instalado. Por favor instala ffmpeg y agrégalo al PATH del sistema."));
+      return;
+    }
+
     const outputPath = path.join(outputDir, `${outputFileName}.m3u8`);
 
     ffmpeg(inputPath)
@@ -205,18 +286,22 @@ export const convertVideoToHLS = async (
 
     console.log(`📤 Subiendo ${hlsFiles.length} archivos a Firebase Storage...`);
 
-    // Subir todos los archivos HLS
-    const uploadPromises = hlsFiles.map(async (file) => {
+    // Subir todos los archivos HLS con progreso
+    let uploadedCount = 0;
+    const uploadPromises = hlsFiles.map(async (file, index) => {
       const filePath = path.join(hlsOutputDir, file);
       const contentType = file.endsWith(".m3u8")
         ? "application/vnd.apple.mpegurl"
         : "video/mp2t";
       const storageKey = `contents/videos/${contentId}/hls/${file}`;
 
-      return uploadFileToFirebase(storageKey, filePath, contentType);
+      await uploadFileToFirebase(storageKey, filePath, contentType);
+      uploadedCount++;
+      console.log(`📤 Subido ${uploadedCount}/${hlsFiles.length}: ${file}`);
     });
 
     await Promise.all(uploadPromises);
+    console.log(`✅ Todos los archivos subidos correctamente`);
 
     // Obtener la URL del archivo .m3u8
     const m3u8Key = `contents/videos/${contentId}/hls/playlist.m3u8`;

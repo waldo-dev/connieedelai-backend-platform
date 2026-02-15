@@ -37,8 +37,12 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-build/src/config/connieedelai-c1edf-firebase-adminsdk-fbsvc-ac47caa06a.json
-build/src/config/connieedelai-c1edf-466220-3e8259af3da0.json
+
+# TypeScript build output
+build/
+
+# Temporary files for video conversion
+temp/
 
 # Dependency directories
 node_modules/

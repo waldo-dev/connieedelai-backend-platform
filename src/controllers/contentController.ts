@@ -57,6 +57,10 @@ const convert_content_to_hls = async (req: Request, res: Response, next: NextFun
   return await contentService.convert_content_to_hls(req, res, next);
 };
 
+const convert_all_to_hls = async (req: Request, res: Response, next: NextFunction) => {
+  return await contentService.convert_all_to_hls(req, res, next);
+};
+
 
 export default {
   get_content_all,
@@ -71,5 +75,6 @@ export default {
   delete_content_by_id,
   generate_upload_url,
   get_content_by_section,
-  convert_content_to_hls
+  convert_content_to_hls,
+  convert_all_to_hls
 };
