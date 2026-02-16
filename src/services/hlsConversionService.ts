@@ -197,7 +197,7 @@ const uploadFileToFirebase = async (
 };
 
 /**
- * Limpia archivos temporales
+ * Limpia archivos temporales recursivamente
  */
 const cleanupTempFiles = (dir: string): void => {
   try {
@@ -205,10 +205,17 @@ const cleanupTempFiles = (dir: string): void => {
       const files = fs.readdirSync(dir);
       files.forEach((file) => {
         const filePath = path.join(dir, file);
-        if (fs.statSync(filePath).isFile()) {
+        const stat = fs.statSync(filePath);
+        
+        if (stat.isDirectory()) {
+          // Eliminar directorio recursivamente
+          cleanupTempFiles(filePath);
+        } else {
+          // Eliminar archivo
           fs.unlinkSync(filePath);
         }
       });
+      // Eliminar el directorio vacío
       fs.rmdirSync(dir);
     }
   } catch (err) {

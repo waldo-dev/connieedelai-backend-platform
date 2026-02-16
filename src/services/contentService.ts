@@ -63,10 +63,13 @@ const get_content_by_id = async (
     console.log("🚀 ~ id:", id);
 
     const content = await Content.findByPk(id);
-    // if (!content) return res.status(404).json("content not found");
-    console.log("🚀 ~ content:", content);
+    if (!content) return res.status(404).json({ message: "content not found" });
+    
+    // Serializar para asegurar que todos los campos se incluyan
+    const contentData = content.get({ plain: true });
+    console.log("🚀 ~ content data:", JSON.stringify(contentData, null, 2));
 
-    return res.status(200).json(content);
+    return res.status(200).json(contentData);
   } catch (err) {
     return res.status(400).json(err);
   }
@@ -89,11 +92,15 @@ const get_content_training = async (
     });
 
     const allContents = sections.flatMap(
-      (section: any) => section.dataValues.contents
+      (section: any) => section.dataValues.contents || section.contents || []
     );
     // Eliminar duplicados si un contenido está en múltiples secciones
+    // Serializar cada contenido para asegurar que todos los campos se incluyan
     const uniqueContents = Array.from(
-      new Map(allContents.map((c) => [c.id, c])).values()
+      new Map(allContents.map((c: any) => {
+        const contentData = c.get ? c.get({ plain: true }) : c;
+        return [contentData.id, contentData];
+      })).values()
     );
 
     return res.status(200).json(uniqueContents);
@@ -130,7 +137,15 @@ const get_content_training_by_id = async (
         .json({ message: "Contenido no encontrado en entrenamientos" });
     }
 
-    return res.status(200).json(section);
+    // Serializar el contenido para asegurar que todos los campos se incluyan
+    const sectionData = section.get ? section.get({ plain: true }) : section;
+    if (sectionData.contents) {
+      sectionData.contents = sectionData.contents.map((c: any) => 
+        c.get ? c.get({ plain: true }) : c
+      );
+    }
+
+    return res.status(200).json(sectionData);
   } catch (err) {
     console.error("Error al obtener contenidos de entrenamiento:", err);
     return res.status(500).json({ message: "Error al obtener entrenamientos" });
@@ -153,13 +168,17 @@ const get_content_nutrition = async (
       ],
     });
     const allContents = sections.flatMap(
-      (section: any) => section.dataValues.contents
+      (section: any) => section.dataValues.contents || section.contents || []
     );
     console.log("🚀 ~ allContents:", allContents);
 
     // Eliminar duplicados si un contenido está en múltiples secciones
+    // Serializar cada contenido para asegurar que todos los campos se incluyan
     const uniqueContents = Array.from(
-      new Map(allContents.map((c: any) => [c.id, c])).values()
+      new Map(allContents.map((c: any) => {
+        const contentData = c.get ? c.get({ plain: true }) : c;
+        return [contentData.id, contentData];
+      })).values()
     );
 
     return res.status(200).json(uniqueContents);
@@ -196,7 +215,15 @@ const get_content_nutrition_by_id = async (
         .json({ message: "Contenido no encontrado en entrenamientos" });
     }
 
-    return res.status(200).json(section);
+    // Serializar el contenido para asegurar que todos los campos se incluyan
+    const sectionData = section.get ? section.get({ plain: true }) : section;
+    if (sectionData.contents) {
+      sectionData.contents = sectionData.contents.map((c: any) => 
+        c.get ? c.get({ plain: true }) : c
+      );
+    }
+
+    return res.status(200).json(sectionData);
   } catch (err) {
     console.error("Error al obtener contenidos de entrenamiento:", err);
     return res.status(500).json({ message: "Error al obtener entrenamientos" });
@@ -391,7 +418,11 @@ export const get_content_by_section = async (
       return res.status(404).json({ message: "Contenido no encontrado" });
     }
 
-    return res.status(200).json(content);
+    // Serializar para asegurar que todos los campos se incluyan
+    const contentData = content.get({ plain: true });
+    console.log("🚀 ~ content data:", JSON.stringify(contentData, null, 2));
+
+    return res.status(200).json(contentData);
   } catch (err) {
     console.error("Error al obtener contenidos por sección:", err);
     return res.status(500).json({ message: "Error interno al obtener contenidos por sección" });
