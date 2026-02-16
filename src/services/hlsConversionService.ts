@@ -81,15 +81,9 @@ const downloadVideo = async (videoUrl: string, outputPath: string): Promise<void
         // Obtener metadata para saber el tamaño
         const [metadata] = await file.getMetadata();
         totalBytes = parseInt(String(metadata.size || "0"), 10);
-        console.log(`📊 Tamaño del archivo: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
         
-        // Descargar directamente desde Firebase Storage con progreso
-        console.log("⬇️ Iniciando descarga desde Firebase Storage...");
+        // Descargar directamente desde Firebase Storage
         await file.download({ destination: outputPath });
-        
-        const stats = fs.statSync(outputPath);
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`✅ Descarga completada en ${elapsed}s (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
         return;
       }
     } catch (err) {
@@ -98,7 +92,6 @@ const downloadVideo = async (videoUrl: string, outputPath: string): Promise<void
   }
 
   // Fallback: descargar usando HTTP
-  console.log("⬇️ Iniciando descarga HTTP...");
   const response = await axios({
     method: "GET",
     url: videoUrl,
@@ -107,35 +100,12 @@ const downloadVideo = async (videoUrl: string, outputPath: string): Promise<void
 
   // Obtener el tamaño total si está disponible
   totalBytes = parseInt(response.headers["content-length"] || "0", 10);
-  if (totalBytes > 0) {
-    console.log(`📊 Tamaño del archivo: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
-  }
 
   const writer = fs.createWriteStream(outputPath);
-
-  // Monitorear progreso de descarga
-  response.data.on("data", (chunk: Buffer) => {
-    downloadedBytes += chunk.length;
-    if (totalBytes > 0) {
-      const percent = ((downloadedBytes / totalBytes) * 100).toFixed(1);
-      const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(2);
-      const totalMB = (totalBytes / 1024 / 1024).toFixed(2);
-      process.stdout.write(`\r⬇️ Descargando: ${percent}% (${downloadedMB} MB / ${totalMB} MB)`);
-    } else {
-      const downloadedMB = (downloadedBytes / 1024 / 1024).toFixed(2);
-      process.stdout.write(`\r⬇️ Descargando: ${downloadedMB} MB...`);
-    }
-  });
-
   response.data.pipe(writer);
 
   return new Promise((resolve, reject) => {
-    writer.on("finish", () => {
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      const stats = fs.statSync(outputPath);
-      console.log(`\n✅ Descarga completada en ${elapsed}s (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
-      resolve();
-    });
+    writer.on("finish", resolve);
     writer.on("error", reject);
   });
 };
@@ -171,16 +141,7 @@ const convertToHLS = (
       .videoCodec("libx264")
       .audioCodec("aac")
       .output(outputPath)
-      .on("start", (commandLine) => {
-        console.log("FFmpeg comando:", commandLine);
-      })
-      .on("progress", (progress) => {
-        if (progress.percent) {
-          console.log(`Progreso: ${Math.round(progress.percent)}%`);
-        }
-      })
       .on("end", () => {
-        console.log("✅ Conversión HLS completada");
         resolve(outputPath);
       })
       .on("error", (err) => {
@@ -192,30 +153,47 @@ const convertToHLS = (
 };
 
 /**
- * Sube un archivo a Firebase Storage
+ * Sube un archivo a Firebase Storage con reintentos
  */
 const uploadFileToFirebase = async (
   key: string,
   filePath: string,
-  contentType: string
+  contentType: string,
+  maxRetries: number = 3
 ): Promise<string> => {
-  try {
-    const file = bucket.file(key);
-    await bucket.upload(filePath, {
-      destination: key,
-      metadata: {
-        contentType,
-        cacheControl: "public,max-age=31536000",
-      },
-    });
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const file = bucket.file(key);
+      await bucket.upload(filePath, {
+        destination: key,
+        metadata: {
+          contentType,
+          cacheControl: "public,max-age=31536000",
+        },
+        timeout: 60000, // 60 segundos de timeout
+      });
 
-    await file.makePublic();
+      await file.makePublic();
 
-    return `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(key)}`;
-  } catch (err) {
-    console.error("Error subiendo archivo a Firebase:", err);
-    throw err;
+      return `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(key)}`;
+    } catch (err: any) {
+      lastError = err;
+      
+      // Si es un error de timeout o conexión, reintentar
+      if (attempt < maxRetries && (err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' || err.code === 'ENOTFOUND')) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Backoff exponencial, max 10s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Si no es un error recuperable o es el último intento, lanzar error
+      throw err;
+    }
   }
+  
+  throw lastError;
 };
 
 /**
@@ -273,43 +251,50 @@ export const convertVideoToHLS = async (
       fs.mkdirSync(hlsOutputDir, { recursive: true });
     }
 
-    console.log(`📥 Descargando video desde: ${videoUrl}`);
     // Descargar el video
     await downloadVideo(videoUrl, inputVideoPath);
 
-    console.log(`🔄 Convirtiendo video a HLS...`);
     // Convertir a HLS
     const m3u8Path = await convertToHLS(inputVideoPath, hlsOutputDir, "playlist");
 
     // Leer todos los archivos generados (segmentos .ts y .m3u8)
     const hlsFiles = fs.readdirSync(hlsOutputDir);
 
-    console.log(`📤 Subiendo ${hlsFiles.length} archivos a Firebase Storage...`);
+    // Separar el archivo .m3u8 de los segmentos
+    const m3u8File = hlsFiles.find(file => file.endsWith(".m3u8"));
+    const segmentFiles = hlsFiles.filter(file => !file.endsWith(".m3u8"));
 
-    // Subir todos los archivos HLS con progreso
-    let uploadedCount = 0;
-    const uploadPromises = hlsFiles.map(async (file, index) => {
-      const filePath = path.join(hlsOutputDir, file);
-      const contentType = file.endsWith(".m3u8")
-        ? "application/vnd.apple.mpegurl"
-        : "video/mp2t";
-      const storageKey = `contents/videos/${contentId}/hls/${file}`;
+    // Subir primero el archivo .m3u8 (más importante)
+    if (m3u8File) {
+      const filePath = path.join(hlsOutputDir, m3u8File);
+      const storageKey = `contents/videos/${contentId}/hls/${m3u8File}`;
+      await uploadFileToFirebase(storageKey, filePath, "application/vnd.apple.mpegurl");
+    }
 
-      await uploadFileToFirebase(storageKey, filePath, contentType);
-      uploadedCount++;
-      console.log(`📤 Subido ${uploadedCount}/${hlsFiles.length}: ${file}`);
-    });
+    // Subir segmentos en lotes de 10 para evitar saturar la conexión
+    const batchSize = 10;
+    for (let i = 0; i < segmentFiles.length; i += batchSize) {
+      const batch = segmentFiles.slice(i, i + batchSize);
+      
+      const uploadPromises = batch.map(async (file) => {
+        const filePath = path.join(hlsOutputDir, file);
+        const storageKey = `contents/videos/${contentId}/hls/${file}`;
+        return uploadFileToFirebase(storageKey, filePath, "video/mp2t");
+      });
 
-    await Promise.all(uploadPromises);
-    console.log(`✅ Todos los archivos subidos correctamente`);
+      await Promise.all(uploadPromises);
+      
+      // Pequeño delay entre lotes para no saturar la conexión
+      if (i + batchSize < segmentFiles.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
 
     // Obtener la URL del archivo .m3u8
     const m3u8Key = `contents/videos/${contentId}/hls/playlist.m3u8`;
     const m3u8Url = `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(
       m3u8Key
     )}`;
-
-    console.log(`✅ Conversión completada. URL HLS: ${m3u8Url}`);
 
     return m3u8Url;
   } catch (err) {
