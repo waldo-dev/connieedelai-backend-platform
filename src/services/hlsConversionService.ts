@@ -9,36 +9,70 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { execSync } from "child_process";
 
+// Configurar la ruta de ffmpeg para fluent-ffmpeg si es necesario
+const findFFmpegPath = (): string | null => {
+  try {
+    if (process.platform === "win32") {
+      // Intentar con cmd /c where primero
+      try {
+        const result = execSync("cmd /c where ffmpeg", { encoding: "utf-8", stdio: "pipe" });
+        const path = result.trim().split("\r\n")[0].trim();
+        if (path && path.length > 0) return path;
+      } catch (e) {
+        // Si falla, intentar ejecutar ffmpeg directamente para obtener la ruta
+        try {
+          execSync("ffmpeg -version", { stdio: "ignore" });
+          // Si funciona, fluent-ffmpeg debería encontrarlo automáticamente
+          return null; // Dejar que fluent-ffmpeg lo encuentre
+        } catch (e2) {
+          return null;
+        }
+      }
+    } else {
+      const result = execSync("which ffmpeg", { encoding: "utf-8", stdio: "pipe" });
+      return result.trim() || null;
+    }
+  } catch (error) {
+    return null;
+  }
+  return null;
+};
+
+// Intentar encontrar y configurar ffmpeg
+const ffmpegPath = findFFmpegPath();
+if (ffmpegPath) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+}
+
 // Verificar si ffmpeg está instalado
 const checkFFmpeg = (): boolean => {
   try {
+    // En Windows, usar cmd.exe para asegurar que use el PATH correcto
     if (process.platform === "win32") {
-      execSync("where ffmpeg", { stdio: "ignore" });
+      execSync("cmd /c ffmpeg -version", { stdio: "ignore", timeout: 5000 });
     } else {
-      execSync("which ffmpeg", { stdio: "ignore" });
+      execSync("ffmpeg -version", { stdio: "ignore", timeout: 5000 });
     }
     return true;
   } catch (error) {
-    return false;
+    // Si falla, intentar sin cmd.exe como fallback
+    try {
+      execSync("ffmpeg -version", { stdio: "ignore", timeout: 5000 });
+      return true;
+    } catch (fallbackError) {
+      return false;
+    }
   }
 };
 
-// Verificar al cargar el módulo
+// Verificar al cargar el módulo (solo advertencia, no bloquea)
 if (!checkFFmpeg()) {
-  console.error("❌ ERROR: ffmpeg no está instalado o no está en el PATH");
+  console.warn("⚠️ ADVERTENCIA: No se pudo verificar ffmpeg en el PATH");
+  console.warn("   fluent-ffmpeg intentará encontrarlo automáticamente cuando sea necesario");
   if (process.platform === "win32") {
-    console.error("\n📦 Para instalar ffmpeg en Windows:");
-    console.error("   1. Descarga desde: https://ffmpeg.org/download.html");
-    console.error("   2. O usa chocolatey: choco install ffmpeg");
-    console.error("   3. O usa winget: winget install ffmpeg");
-    console.error("\n   Asegúrate de agregar ffmpeg al PATH del sistema");
-    console.error("   Reinicia la terminal después de instalar\n");
-  } else {
-    console.error("\n📦 Para instalar ffmpeg en Ubuntu/Debian:");
-    console.error("   sudo apt update");
-    console.error("   sudo apt install -y ffmpeg");
-    console.error("\n📦 Para instalar ffmpeg en Alpine (Docker):");
-    console.error("   apk add --no-cache ffmpeg\n");
+    console.warn("\n📦 Si tienes problemas, asegúrate de que ffmpeg esté instalado:");
+    console.warn("   winget install ffmpeg");
+    console.warn("   Reinicia el servidor después de instalar\n");
   }
 }
 
@@ -119,15 +153,9 @@ const convertToHLS = (
   outputFileName: string
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
-    // Verificar ffmpeg antes de usar
-    if (!checkFFmpeg()) {
-      reject(new Error("ffmpeg no está instalado. Por favor instala ffmpeg y agrégalo al PATH del sistema."));
-      return;
-    }
-
     const outputPath = path.join(outputDir, `${outputFileName}.m3u8`);
 
-    ffmpeg(inputPath)
+    const ffmpegProcess = ffmpeg(inputPath)
       .outputOptions([
         "-codec:v libx264",
         "-codec:a aac",
@@ -141,15 +169,85 @@ const convertToHLS = (
       .videoCodec("libx264")
       .audioCodec("aac")
       .output(outputPath)
+      .on("start", (commandLine) => {
+        console.log("🎬 [FFmpeg] Comando ejecutado:", commandLine);
+      })
       .on("end", () => {
         resolve(outputPath);
       })
-      .on("error", (err) => {
-        console.error("Error en conversión HLS:", err);
-        reject(err);
+      .on("error", (err: any) => {
+        console.error("❌ [FFmpeg] Error en conversión HLS:", err);
+        
+        // Verificar si el error es porque no se encuentra ffmpeg
+        if (err.message && (
+          err.message.includes("ffmpeg") && err.message.includes("not found") ||
+          err.message.includes("ENOENT") ||
+          err.message.includes("spawn ffmpeg")
+        )) {
+          reject(new Error("ffmpeg no está instalado o no está en el PATH del sistema. Por favor instala ffmpeg y agrégalo al PATH, luego reinicia el servidor."));
+        } else {
+          reject(err);
+        }
       })
       .run();
   });
+};
+
+/**
+ * Corrige el playlist.m3u8 reemplazando rutas relativas por URLs absolutas
+ * @param m3u8Path Ruta local del archivo .m3u8
+ * @param contentId ID del contenido para construir la URL base
+ */
+const fixM3U8Playlist = (m3u8Path: string, contentId: number): void => {
+  try {
+    // Leer el contenido del playlist
+    const playlistContent = fs.readFileSync(m3u8Path, "utf-8");
+    const lines = playlistContent.split("\n");
+    
+    // Path base en Firebase Storage
+    const basePath = `contents/videos/${contentId}/hls`;
+    const baseUrl = `https://storage.googleapis.com/${bucketName}/${encodeURIComponent(basePath)}`;
+    
+    let segmentsFixed = 0;
+    
+    // Procesar cada línea
+    const correctedLines = lines.map((line) => {
+      const trimmedLine = line.trim();
+      
+      // Detectar líneas que referencian segmentos .ts
+      // Formato M3U8: las líneas con segmentos pueden ser:
+      // - segment_000.ts (directamente)
+      // - ./segment_000.ts (ruta relativa)
+      // - subdir/segment_000.ts (ruta relativa con subdirectorio)
+      // NO tocar líneas que ya son URLs absolutas (http:// o https://)
+      if (trimmedLine.endsWith(".ts") && !trimmedLine.startsWith("http")) {
+        // Extraer solo el nombre del archivo (por si hay rutas relativas con subdirectorios)
+        const segmentFileName = path.basename(trimmedLine);
+        
+        // Construir URL absoluta con encoding correcto
+        const absoluteUrl = `${baseUrl}/${encodeURIComponent(segmentFileName)}`;
+        
+        // Preservar indentación/espacios de la línea original
+        const prefix = line.substring(0, line.length - trimmedLine.length);
+        segmentsFixed++;
+        return prefix + absoluteUrl;
+      }
+      
+      // Mantener todas las demás líneas sin cambios (comentarios, metadatos, etc.)
+      return line;
+    });
+    
+    // Escribir el contenido corregido
+    const correctedContent = correctedLines.join("\n");
+    fs.writeFileSync(m3u8Path, correctedContent, "utf-8");
+    
+    if (segmentsFixed > 0) {
+      console.log(`✅ Playlist .m3u8 corregido: ${segmentsFixed} segmento(s) reemplazado(s) por URLs absolutas`);
+    }
+  } catch (error) {
+    console.error("❌ Error corrigiendo playlist .m3u8:", error);
+    throw error;
+  }
 };
 
 /**
@@ -264,6 +362,9 @@ export const convertVideoToHLS = async (
     // Convertir a HLS
     const m3u8Path = await convertToHLS(inputVideoPath, hlsOutputDir, "playlist");
 
+    // Corregir el playlist.m3u8: reemplazar rutas relativas por URLs absolutas
+    fixM3U8Playlist(m3u8Path, contentId);
+
     // Leer todos los archivos generados (segmentos .ts y .m3u8)
     const hlsFiles = fs.readdirSync(hlsOutputDir);
 
@@ -271,7 +372,7 @@ export const convertVideoToHLS = async (
     const m3u8File = hlsFiles.find(file => file.endsWith(".m3u8"));
     const segmentFiles = hlsFiles.filter(file => !file.endsWith(".m3u8"));
 
-    // Subir primero el archivo .m3u8 (más importante)
+    // Subir primero el archivo .m3u8 (más importante) - ya corregido con URLs absolutas
     if (m3u8File) {
       const filePath = path.join(hlsOutputDir, m3u8File);
       const storageKey = `contents/videos/${contentId}/hls/${m3u8File}`;

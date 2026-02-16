@@ -434,39 +434,90 @@ export const convert_content_to_hls = async (
   res: Response,
   next: NextFunction
 ) => {
+  const startTime = Date.now();
+  
   try {
     const contentId = parseInt(req.params.id);
     if (isNaN(contentId)) {
-      return res.status(400).json({ message: "ID inválido" });
+      return res.status(400).json({ 
+        success: false,
+        message: "ID inválido",
+        contentId: req.params.id 
+      });
     }
+
+    console.log(`\n🔄 [HLS Conversion] Iniciando conversión para contenido ID: ${contentId}`);
 
     // Buscar el contenido
     const content = await Content.findByPk(contentId);
     if (!content) {
-      return res.status(404).json({ message: "Contenido no encontrado" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Contenido no encontrado",
+        contentId 
+      });
     }
+
+    console.log(`📋 [HLS Conversion] Contenido encontrado: "${content.title}"`);
+    console.log(`📋 [HLS Conversion] Tipo: ${content.type}`);
+    console.log(`📋 [HLS Conversion] URL original: ${content.url}`);
+    console.log(`📋 [HLS Conversion] HLS URL actual: ${content.hls_url || "No tiene"}`);
+    console.log(`📋 [HLS Conversion] Estado conversión: ${content.conversion_status || "N/A"}`);
 
     // Verificar que tiene una URL de video
     if (!content.url) {
-      return res.status(400).json({ message: "El contenido no tiene una URL de video" });
+      return res.status(400).json({ 
+        success: false,
+        message: "El contenido no tiene una URL de video",
+        contentId,
+        content: {
+          id: content.id,
+          title: content.title,
+          type: content.type
+        }
+      });
+    }
+
+    // Verificar que es un video
+    if (content.type !== "video") {
+      return res.status(400).json({ 
+        success: false,
+        message: "El contenido no es un video",
+        contentId,
+        contentType: content.type
+      });
     }
 
     // Verificar si ya tiene HLS
     if (content.hls_url) {
+      console.log(`✅ [HLS Conversion] El video ya tiene versión HLS`);
       return res.status(200).json({
+        success: true,
+        message: "El video ya tiene versión HLS",
         hls_url: content.hls_url,
-        status: "converted",
+        status: "already_converted",
+        contentId,
+        content: {
+          id: content.id,
+          title: content.title,
+          url: content.url,
+          hls_url: content.hls_url
+        }
       });
     }
 
-    console.log(`🔄 Iniciando conversión a HLS para contenido ID: ${contentId}`);
+    console.log(`⏳ [HLS Conversion] Actualizando estado a "processing"...`);
 
     // Actualizar status a "processing"
     await content.update({ conversion_status: "processing" });
 
     try {
+      console.log(`📥 [HLS Conversion] Iniciando descarga y conversión...`);
+      
       // Convertir el video a HLS
       const hlsUrl = await convertVideoToHLS(content.url, contentId);
+
+      console.log(`✅ [HLS Conversion] Conversión completada. Actualizando base de datos...`);
 
       // Actualizar hls_url y status a "completed"
       await content.update({
@@ -474,23 +525,69 @@ export const convert_content_to_hls = async (
         conversion_status: "completed",
       });
 
-      console.log(`✅ Conversión completada. HLS URL: ${hlsUrl}`);
+      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`✅ [HLS Conversion] Proceso completado en ${elapsedTime}s`);
+      console.log(`✅ [HLS Conversion] HLS URL: ${hlsUrl}\n`);
+
+      // Recargar el contenido para obtener los datos actualizados
+      await content.reload();
 
       return res.status(200).json({
+        success: true,
+        message: "Video convertido a HLS exitosamente",
         hls_url: hlsUrl,
         status: "converted",
+        contentId,
+        elapsedTime: `${elapsedTime}s`,
+        content: {
+          id: content.id,
+          title: content.title,
+          url: content.url,
+          hls_url: content.hls_url,
+          conversion_status: content.conversion_status
+        }
       });
-    } catch (conversionError) {
+    } catch (conversionError: any) {
+      console.error(`❌ [HLS Conversion] Error en la conversión:`, conversionError);
+      
       // Actualizar status a "failed" en caso de error
       await content.update({ conversion_status: "failed" });
-      throw conversionError;
+      
+      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      
+      return res.status(500).json({
+        success: false,
+        message: "Error durante la conversión a HLS",
+        status: "failed",
+        contentId,
+        elapsedTime: `${elapsedTime}s`,
+        error: {
+          message: conversionError?.message || "Error desconocido",
+          code: conversionError?.code,
+          stack: process.env.NODE_ENV === "development" ? conversionError?.stack : undefined
+        },
+        content: {
+          id: content.id,
+          title: content.title,
+          url: content.url,
+          conversion_status: "failed"
+        }
+      });
     }
-  } catch (err) {
-    console.error("Error al convertir video a HLS:", err);
+  } catch (err: any) {
+    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.error(`❌ [HLS Conversion] Error general:`, err);
+    
     return res.status(500).json({
+      success: false,
       message: "Error interno al convertir video a HLS",
-      error: err instanceof Error ? err.message : "Error desconocido",
       status: "failed",
+      elapsedTime: `${elapsedTime}s`,
+      error: {
+        message: err?.message || "Error desconocido",
+        code: err?.code,
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      }
     });
   }
 };

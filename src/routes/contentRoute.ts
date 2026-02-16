@@ -46,6 +46,6 @@ contentRoute
   .post( contentControllers.convert_all_to_hls)
 
   contentRoute.route("/:id/convert-to-hls")
-  .post(isAuthorized, contentControllers.convert_content_to_hls)
+  .post( contentControllers.convert_content_to_hls)
 
 export default contentRoute;
