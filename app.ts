@@ -14,16 +14,26 @@ app.use(express.json({ limit: '5gb' }));
 app.use(express.urlencoded({ extended: true, limit: '5gb' }));
 app.use(cookieParser());
 
-// Configuración de CORS para producción
-app.use(cors({
-  origin: "https://app.connieedelai.com",
+// Configuración de CORS (condicional según entorno)
+const corsOptions = {
+  origin: process.env.NODE_ENV !== "dev" 
+    ? "https://app.connieedelai.com"
+    : [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173"
+      ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Manejar solicitudes preflight OPTIONS
-app.options("*", cors());
+app.options("*", cors(corsOptions));
 
 app.use(passport.initialize());
 // app.use(passport.session());
