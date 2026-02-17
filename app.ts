@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import cookieParser from "cookie-parser";
-var cors = require("cors");
+import cors from "cors";
 var createError = require("http-errors");
 
 import routes from "./src/routes/index";
@@ -13,7 +13,17 @@ var app = express();
 app.use(express.json({ limit: '5gb' }));
 app.use(express.urlencoded({ extended: true, limit: '5gb' }));
 app.use(cookieParser());
-app.use(cors());
+
+// Configuración de CORS para producción
+app.use(cors({
+  origin: "https://app.connieedelai.com",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+// Manejar solicitudes preflight OPTIONS
+app.options("*", cors());
 
 app.use(passport.initialize());
 // app.use(passport.session());
